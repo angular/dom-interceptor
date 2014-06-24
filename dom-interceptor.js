@@ -8,6 +8,7 @@
 * are set back to these original values
 **/
 domInterceptor.collectPrototypeProperties = function(type) {
+  domInterceptor._listener = domInterceptor.NOOP;
   if(type ==  undefined || type.prototype == undefined) {
     throw new Error('collectPrototypeProperties() needs a .prototype to collect properties from. ' +
       type + '.prototype is undefined.');
@@ -21,6 +22,7 @@ domInterceptor.collectPrototypeProperties = function(type) {
     }
     catch(e) {}
   });
+  domInterceptor._listener = domInterceptor.listener;
   return objectProperties;
 };
 
@@ -44,6 +46,7 @@ domInterceptor.originalProperties = {
 */
 domInterceptor.patchOnePrototype = function(type, listener) {
   domInterceptor.setListener(listener);
+  domInterceptor._listener = domInterceptor.NOOP;
   if (!type || !type.prototype) {
     throw new Error('collectPrototypeProperties() needs a .prototype to collect properties from. ' +
       type + '.prototype is undefined.');
@@ -51,17 +54,48 @@ domInterceptor.patchOnePrototype = function(type, listener) {
   var objectProperties = Object.getOwnPropertyNames(type.prototype);
   objectProperties.forEach(function(prop) {
     //Access of some prototype values may throw an error
-    var original = type.prototype[prop];
-    if(typeof original === 'function') {
-      try {
-        type.prototype[prop] = function () {
-          domInterceptor.callListenerWithMessage(prop);
-          return original.apply(this, arguments);
-        };
+    var desc = Object.getOwnPropertyDescriptor(type.prototype, prop);
+    if (desc) {
+      if (desc.configurable) {
+        if (desc.value) {
+          if (typeof desc.value === 'function') {
+            var originalValue = desc.value;
+            desc.value = function () {
+              domInterceptor.callListenerWithMessage(prop);
+              return originalValue.apply(this, arguments);
+            };
+          }
+        } else {
+          if (typeof desc.set === 'function') {
+            var originalSet = desc.set;
+            desc.set = function () {
+              domInterceptor.callListenerWithMessage('set:' + prop);
+              return originalSet.apply(this, arguments);
+            };
+          }
+          if (typeof desc.get === 'function') {
+            var originalGet = desc.get;
+            desc.get = function () {
+              domInterceptor.callListenerWithMessage('get:' + prop);
+              return originalGet.apply(this, arguments);
+            };
+          }
+        }
+
+        Object.defineProperty(type.prototype, prop, desc);
+      } else if (desc.writable) {
+        try {
+          var original = type.prototype[prop];
+          type.prototype[prop] = function () {
+            domInterceptor.callListenerWithMessage(prop);
+            return original.apply(this, arguments);
+          };
+        }
+        catch (e) {}
       }
-      catch (e) {}
     }
   });
+  domInterceptor._listener = domInterceptor.listener;
 };
 
 /**
@@ -70,6 +104,7 @@ domInterceptor.patchOnePrototype = function(type, listener) {
 * original values that were collected.
 **/
 domInterceptor.unpatchOnePrototype = function(type, typeName) {
+  domInterceptor._listener = domInterceptor.NOOP;
   if(typeName == undefined) {
     throw new Error('typeName must be the name used to save prototype properties. Got: ' + typeName);
   }
@@ -84,6 +119,7 @@ domInterceptor.unpatchOnePrototype = function(type, typeName) {
     }
     catch(e) {}
   });
+  domInterceptor._listener = domInterceptor.listener;
 };
 
 
@@ -105,11 +141,13 @@ domInterceptor.savedElements = {};
 * Each element has an object associating with it the patched properties
 **/
 domInterceptor.save = function(element, index) {
+  domInterceptor._listener = domInterceptor.NOOP;
   var elementProperties = {};
   domInterceptor.propertiesToPatch.forEach(function(prop) {
     elementProperties[prop] = element[prop];
   });
   domInterceptor.savedElements[index] = elementProperties;
+  domInterceptor._listener = domInterceptor.listener;
 };
 
 
@@ -118,19 +156,24 @@ domInterceptor.save = function(element, index) {
 * element to call the listener function on getting or setting
 **/
 domInterceptor.patchElementProperties = function(element, listener) {
+  domInterceptor._listener = domInterceptor.NOOP;
   domInterceptor.setListener(listener);
+  var real = {};
   domInterceptor.propertiesToPatch.forEach(function(prop) {
+    real[prop] = element[prop];
     Object.defineProperty(element, prop, {
       configurable: true,
       get: function() {
-        domInterceptor.listener(prop);
-        return element.prop;
+        domInterceptor.callListenerWithMessage(prop);
+        return real[prop];
       },
       set: function(newValue) {
-        domInterceptor.listener(prop);
+        domInterceptor.callListenerWithMessage(prop);
+        real[prop] = element[prop];
       }
     });
   });
+  domInterceptor._listener = domInterceptor.listener;
   return element;
 };
 
@@ -138,6 +181,7 @@ domInterceptor.patchElementProperties = function(element, listener) {
 * Helper function to unpatch all properties of a given element
 */
 domInterceptor.unpatchElementProperties = function(element, originalElement) {
+  domInterceptor._listener = domInterceptor.NOOP;
   domInterceptor.propertiesToPatch.forEach(function(prop) {
     Object.defineProperty(element, prop, {
       configurable: true,
@@ -149,6 +193,7 @@ domInterceptor.unpatchElementProperties = function(element, originalElement) {
       }
     });
   });
+  domInterceptor._listener = domInterceptor.listener;
 };
 
 /**
@@ -158,23 +203,27 @@ domInterceptor.unpatchElementProperties = function(element, originalElement) {
 * patches them to call the given listener function if manipulated.
 */
 domInterceptor.patchExistingElements = function(listener) {
-  domInterceptor.setListener(listener);
+  domInterceptor._listener = domInterceptor.NOOP;
   var elements = document.getElementsByTagName('*');
   for(var i = 0; i < elements.length; i++) {
     domInterceptor.save(elements[i], i);
     domInterceptor.patchElementProperties(elements[i], listener);
   }
+  domInterceptor.setListener(listener);
+  domInterceptor._listener = domInterceptor.listener;
 };
 
 /**
 * Unpatches all the elements on the page that were patched.
 */
 domInterceptor.unpatchExistingElements = function() {
+  domInterceptor._listener = domInterceptor.NOOP;
   var elements = document.getElementsByTagName('*');
   for(var i = 0; i < elements.length; i++) {
     var originalElement = domInterceptor.savedElements[i];
     domInterceptor.unpatchElementProperties(elements[i], originalElement);
   }
+  domInterceptor._listener = domInterceptor.listener;
 };
 
 /**
@@ -184,11 +233,13 @@ domInterceptor.unpatchExistingElements = function() {
 **/
 domInterceptor.addManipulationListener = function(listener) {
   domInterceptor.setListener(listener);
+  domInterceptor._listener = domInterceptor.NOOP;
   domInterceptor.patchExistingElements();
   domInterceptor.patchOnePrototype(Element);
   domInterceptor.patchOnePrototype(Node);
   domInterceptor.patchOnePrototype(EventTarget);
   domInterceptor.patchOnePrototype(Document);
+  domInterceptor._listener = domInterceptor.listener;
 };
 
 /**
@@ -198,11 +249,13 @@ domInterceptor.addManipulationListener = function(listener) {
 * original state.
 **/
 domInterceptor.removeManipulationListener = function() {
+  domInterceptor._listener = domInterceptor.NOOP;
   domInterceptor.unpatchOnePrototype(Element, 'Element');
   domInterceptor.unpatchOnePrototype(Node, 'Node');
   domInterceptor.unpatchOnePrototype(EventTarget, 'EventTarget');
   domInterceptor.unpatchOnePrototype(Document, 'Document');
   domInterceptor.unpatchExistingElements();
+  domInterceptor._listener = domInterceptor.listener;
 };
 
 /**
@@ -235,17 +288,10 @@ domInterceptor.setListener = function(listener) {
 * Error function thrown on detection of DOM manipulation.
 * May be overriden to throw custom error function if desired.
 */
-domInterceptor.listener = function(property) {
-  var e = new Error(domInterceptor.defaultError + ' ' + property);
-  //Find the relevant stack trace identification
-  //The first two lines of stack trace refer to the error being thrown
-  //As listener inside of this file
-  //e += '\n' + e.stack.split('\n')[3];
-  throw e;
-};
+domInterceptor._listener = domInterceptor.NOOP = function() {};
 
 domInterceptor.callListenerWithMessage = function(property) {
-  return domInterceptor.listener(domInterceptor.defaultError + ' ' + property);
+  return domInterceptor._listener(domInterceptor.defaultError + ' ' + property);
 };
 
 }((typeof module !== 'undefined' && module && module.exports) ?
