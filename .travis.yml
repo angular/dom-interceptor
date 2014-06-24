@@ -1,0 +1,11 @@
+language: node_js
+addons:
+  firefox: "29.0"
+node_js:
+  - 0.10
+before_script:
+  - npm install -g bower
+  - bower install angular
+  - bower install angular-mocks
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
