@@ -1,0 +1,33 @@
+{
+  "name": "dom-interceptor",
+  "version": "0.0.0",
+  "description": "patch DOM APIs to intercept calls to them",
+  "main": "dom-interceptor.js",
+  "scripts": {
+    "test": "./node_modules/karma/bin/karma start --browsers Firefox --single-run"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/angular/dom-interceptor.git"
+  },
+  "keywords": [
+    "dom",
+    "patch",
+    "api",
+    "intercept",
+    "hacks"
+  ],
+  "author": "Erin Altenhof-Long <ealtenhof@google.com>",
+  "license": "Apache 2.0",
+  "bugs": {
+    "url": "https://github.com/angular/dom-interceptor/issues"
+  },
+  "homepage": "https://github.com/angular/dom-interceptor",
+  "devDependencies": {
+    "karma": "0.12.16",
+    "karma-chrome-launcher": "^0.1.4",
+    "karma-coverage": "~0.1.4",
+    "karma-firefox-launcher": "~0.1.0",
+    "karma-jasmine": "0.1.5"
+  }
+}
