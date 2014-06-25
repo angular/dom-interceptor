@@ -3,17 +3,25 @@ describe('domInterceptor', function() {
     domInterceptor.listener = jasmine.createSpy('listener');
   });
 
-  describe('collectPrototypeProperties()', function() {
+  describe('collectUnalteredPrototypeProperties()', function() {
     it('should collect the unpatched properties of prototypes', function() {
       var objectPropertyNames = Object.getOwnPropertyNames(Element.prototype);
-      var originalProperties = domInterceptor.collectPrototypeProperties(Element);
+      var originalProperties = domInterceptor.collectUnalteredPrototypeProperties('Element', Element);
       expect(originalProperties[objectPropertyNames[0]]).toBe(Element.prototype[objectPropertyNames[0]]);
     });
 
+
+    it('should throw if typeName is not provided', function() {
+      expect(function() {
+          domInterceptor.collectUnalteredPrototypeProperties(Element);
+      }).toThrow('collectUnalteredPrototypeProperties() needs a .prototype to collect properties from. undefined.prototype is undefined.');
+    });
+
+
     it('should throw if type.prototype is undefined', function() {
       expect(function() {
-          domInterceptor.collectPrototypeProperties(document.body);
-      }).toThrow('collectPrototypeProperties() needs a .prototype to collect properties from. [object HTMLBodyElement].prototype is undefined.');
+          domInterceptor.collectUnalteredPrototypeProperties('Body', document.body);
+      }).toThrow('collectUnalteredPrototypeProperties() needs a .prototype to collect properties from. [object HTMLBodyElement].prototype is undefined.');
     });
   });
 
@@ -25,6 +33,7 @@ describe('domInterceptor', function() {
         expect(domInterceptor.savedElements[length - 1]).not.toBeUndefined();
         domInterceptor.unpatchExistingElements();
       });
+
 
       it('should patch existing elements in the DOM', function() {
           var testElement = document.createElement('div');
@@ -374,11 +383,7 @@ describe('domInterceptor', function() {
     });
 
 
-    it('should be harmless if called when no manipulation listener has been added', function() {
-      expect(function() {
-        domInterceptor.removeManipulationListener();
-      }).not.toThrow();
-    });
+
   });
 
   describe('setListener()', function() {
