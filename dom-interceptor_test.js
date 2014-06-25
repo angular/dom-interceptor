@@ -62,8 +62,9 @@ describe('domInterceptor', function() {
       domInterceptor.unpatchElementProperties(element, copy);
     });
   });
+
   describe('unpatchExistingElements()', function() {
-      it('should patch existing elements to protect from manipulation', function() {
+      it('should return existing elements to their before patch state', function() {
           var testElement = document.createElement('div');
           testElement.innerHTML = 'testing html';
           testElement.setAttribute('id', 'testNew');
@@ -371,6 +372,13 @@ describe('domInterceptor', function() {
       domInterceptor.removeManipulationListener();
       expect(domInterceptor.unpatchExistingElements).toHaveBeenCalled();
     });
+
+
+    it('should be harmless if called when no manipulation listener has been added', function() {
+      expect(function() {
+        domInterceptor.removeManipulationListener();
+      }).not.toThrow();
+    });
   });
 
   describe('setListener()', function() {
@@ -395,13 +403,6 @@ describe('domInterceptor', function() {
       var originalListener = domInterceptor.listener;
       domInterceptor.setListener();
       expect(originalListener).toBe(domInterceptor.listener);
-    });
-
-
-    it('should be harmless if called when no manipulation listener has been added', function() {
-      expect(function() {
-        domInterceptor.removeManipulationListener();
-      }).not.toThrow();
     });
   });
 });

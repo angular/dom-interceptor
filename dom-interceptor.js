@@ -291,7 +291,12 @@ domInterceptor.setListener = function(listener) {
 domInterceptor._listener = domInterceptor.NOOP = function() {};
 
 domInterceptor.callListenerWithMessage = function(property) {
-  return domInterceptor._listener(domInterceptor.defaultError + ' ' + property);
+  if(domInterceptor.listener) {
+    domInterceptor.listener();
+  }
+  else {
+    console.log(domInterceptor.defaultError + ' ' + property);
+  }
 };
 
 }((typeof module !== 'undefined' && module && module.exports) ?
