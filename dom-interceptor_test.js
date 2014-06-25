@@ -121,13 +121,10 @@ describe('domInterceptor', function() {
   });
   describe('patchOnePrototype()', function() {
       it('should patch all properties of a given object .prototype', function() {
-        var objectProperties = Object.getOwnPropertyNames(Element.prototype);
-        var testProperty = objectProperties[0];
-        var originalFunction = Element.prototype[testProperty];
-        expect(Element.prototype[testProperty]).toBe(originalFunction);
+        var originalFunction = Element.prototype.getAttribute;
         domInterceptor.collectUnalteredPrototypeProperties(Element, 'Element');
         domInterceptor.patchOnePrototype(Element);
-        expect(Element.prototype[testProperty]).not.toBe(originalFunction);
+        expect(Element.prototype.getAttribute).not.toBe(originalFunction);
         domInterceptor.unpatchOnePrototype(Element, 'Element');
       });
   });
@@ -273,6 +270,7 @@ describe('domInterceptor', function() {
   describe('removeManipulationListener()', function() {
     it('should remove the patch from functions on Element.prototype', function() {
       spyOn(domInterceptor, 'unpatchOnePrototype');
+      spyOn(domInterceptor, 'unpatchExistingElements');
       expect(domInterceptor.unpatchOnePrototype).not.toHaveBeenCalled();
       domInterceptor.removeManipulationListener();
       expect(domInterceptor.unpatchOnePrototype).toHaveBeenCalledWith(Element, 'Element');
@@ -281,6 +279,7 @@ describe('domInterceptor', function() {
 
     it('should remove the patch from functions on Node.prototype', function() {
       spyOn(domInterceptor, 'unpatchOnePrototype');
+      spyOn(domInterceptor, 'unpatchExistingElements');
       expect(domInterceptor.unpatchOnePrototype).not.toHaveBeenCalled();
       domInterceptor.removeManipulationListener();
       expect(domInterceptor.unpatchOnePrototype).toHaveBeenCalledWith(Node, 'Node');
@@ -289,6 +288,7 @@ describe('domInterceptor', function() {
 
     it('should remove the patch from functions on EventTarget.prototype', function() {
       spyOn(domInterceptor, 'unpatchOnePrototype');
+      spyOn(domInterceptor, 'unpatchExistingElements');
       expect(domInterceptor.unpatchOnePrototype).not.toHaveBeenCalled();
       domInterceptor.removeManipulationListener();
       expect(domInterceptor.unpatchOnePrototype).toHaveBeenCalledWith(EventTarget, 'EventTarget');
@@ -297,6 +297,7 @@ describe('domInterceptor', function() {
 
     it('should remove the patch from functions on Document.prototype', function() {
       spyOn(domInterceptor, 'unpatchOnePrototype');
+      spyOn(domInterceptor, 'unpatchExistingElements');
       expect(domInterceptor.unpatchOnePrototype).not.toHaveBeenCalled();
       domInterceptor.removeManipulationListener();
       expect(domInterceptor.unpatchOnePrototype).toHaveBeenCalledWith(Document, 'Document');
@@ -304,6 +305,7 @@ describe('domInterceptor', function() {
 
 
     it('should remove the patch from all DOM elements', function() {
+      spyOn(domInterceptor, 'unpatchOnePrototype');
       spyOn(domInterceptor, 'unpatchExistingElements');
       expect(domInterceptor.unpatchExistingElements).not.toHaveBeenCalled();
       domInterceptor.removeManipulationListener();

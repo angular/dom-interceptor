@@ -8,7 +8,7 @@
 * HTML elements.
 **/
 domInterceptor.addManipulationListener = function(loudError, debugStatement, propOnly) {
-  domInterceptor._listener = domInterceptor.NOOP;
+  domInterceptor._callListenerWithMessage = domInterceptor.NOOP;
   domInterceptor.setListenerDefaults(loudError, debugStatement, propOnly);
   domInterceptor.collectUnalteredPrototypeProperties(Element, 'Element');
   domInterceptor.patchOnePrototype(Element);
@@ -19,7 +19,7 @@ domInterceptor.addManipulationListener = function(loudError, debugStatement, pro
   domInterceptor.collectUnalteredPrototypeProperties(Document, 'Document');
   domInterceptor.patchOnePrototype(Document);
   domInterceptor.patchExistingElements();
-  domInterceptor._listener = domInterceptor.listener;
+  domInterceptor._callListenerWithMessage = domInterceptor.listener;
 };
 
 /**
@@ -39,7 +39,7 @@ domInterceptor.setListenerDefaults = function(loudError, debugBreak, propOnly) {
 * Error function thrown on detection of DOM manipulation.
 * May be overriden to throw custom error function if desired.
 */
-domInterceptor._listener = domInterceptor.NOOP = function() {};
+domInterceptor._callListenerWithMessage = domInterceptor.NOOP = function() {};
 
 domInterceptor.callListenerWithMessage = function(messageProperties) {
   var message = messageProperties.property;
@@ -78,7 +78,7 @@ domInterceptor.originalProperties = {};
 * are set back to these original values
 **/
 domInterceptor.collectUnalteredPrototypeProperties = function(type, typeName) {
-  domInterceptor._listener = domInterceptor.NOOP;
+  domInterceptor._callListenerWithMessage = domInterceptor.NOOP;
   if(!type || !type.prototype) {
     throw new Error('collectUnalteredPrototypeProperties() needs a .prototype to collect properties from. ' +
       type + '.prototype is undefined.');
@@ -95,7 +95,7 @@ domInterceptor.collectUnalteredPrototypeProperties = function(type, typeName) {
     }
     catch(e) {}
   });
-  domInterceptor._listener = domInterceptor.listener;
+  domInterceptor._callListenerWithMessage = domInterceptor.listener;
   domInterceptor.originalProperties[typeName] = objectProperties;
   return objectProperties;
 };
@@ -107,7 +107,7 @@ domInterceptor.collectUnalteredPrototypeProperties = function(type, typeName) {
 * If no listener function is provided, the default listener is used.
 */
 domInterceptor.patchOnePrototype = function(type) {
-  domInterceptor._listener = domInterceptor.NOOP;
+  domInterceptor._callListenerWithMessage = domInterceptor.NOOP;
   if (!type || !type.prototype) {
     throw new Error('collectPrototypeProperties() needs a .prototype to collect properties from. ' +
       type + '.prototype is undefined.');
@@ -156,7 +156,7 @@ domInterceptor.patchOnePrototype = function(type) {
       }
     }
   });
-  domInterceptor._listener = domInterceptor.listener;
+  domInterceptor._callListenerWithMessage = domInterceptor.listener;
 };
 
 /**
@@ -166,13 +166,13 @@ domInterceptor.patchOnePrototype = function(type) {
 * patches them to call the given listener function if manipulated.
 */
 domInterceptor.patchExistingElements = function() {
-  domInterceptor._listener = domInterceptor.NOOP;
+  domInterceptor._callListenerWithMessage = domInterceptor.NOOP;
   var elements = document.getElementsByTagName('*');
   for(var i = 0; i < elements.length; i++) {
     domInterceptor.save(elements[i], i);
     domInterceptor.patchElementProperties(elements[i]);
   }
-  domInterceptor._listener = domInterceptor.listener;
+  domInterceptor._callListenerWithMessage = domInterceptor.listener;
 };
 
 /**
@@ -192,7 +192,7 @@ domInterceptor.savedElements = {};
 * element to call the listener function on getting or setting
 **/
 domInterceptor.patchElementProperties = function(element) {
-  domInterceptor._listener = domInterceptor.NOOP;
+  domInterceptor._callListenerWithMessage = domInterceptor.NOOP;
   var real = {};
   domInterceptor.propertiesToPatch.forEach(function(prop) {
     real[prop] = element[prop];
@@ -208,7 +208,7 @@ domInterceptor.patchElementProperties = function(element) {
       }
     });
   });
-  domInterceptor._listener = domInterceptor.listener;
+  domInterceptor._callListenerWithMessage = domInterceptor.listener;
   return element;
 };
 
@@ -217,13 +217,13 @@ domInterceptor.patchElementProperties = function(element) {
 * Each element has an object associating with it the patched properties
 **/
 domInterceptor.save = function(element, index) {
-  domInterceptor._listener = domInterceptor.NOOP;
+  domInterceptor._callListenerWithMessage = domInterceptor.NOOP;
   var elementProperties = {};
   domInterceptor.propertiesToPatch.forEach(function(prop) {
     elementProperties[prop] = element[prop];
   });
   domInterceptor.savedElements[index] = elementProperties;
-  domInterceptor._listener = domInterceptor.listener;
+  domInterceptor._callListenerWithMessage = domInterceptor.listener;
 };
 
 /**
@@ -233,13 +233,13 @@ domInterceptor.save = function(element, index) {
 * original state.
 **/
 domInterceptor.removeManipulationListener = function() {
-  domInterceptor._listener = domInterceptor.NOOP;
+  domInterceptor._callListenerWithMessage = domInterceptor.NOOP;
   domInterceptor.unpatchOnePrototype(Element, 'Element');
   domInterceptor.unpatchOnePrototype(Node, 'Node');
   domInterceptor.unpatchOnePrototype(EventTarget, 'EventTarget');
   domInterceptor.unpatchOnePrototype(Document, 'Document');
   domInterceptor.unpatchExistingElements();
-  domInterceptor._listener = domInterceptor.listener;
+  domInterceptor._callListenerWithMessage = domInterceptor.listener;
 };
 
 
@@ -249,7 +249,7 @@ domInterceptor.removeManipulationListener = function() {
 * original values that were collected.
 **/
 domInterceptor.unpatchOnePrototype = function(type, typeName) {
-  domInterceptor._listener = domInterceptor.NOOP;
+  domInterceptor._callListenerWithMessage = domInterceptor.NOOP;
   if(typeName == undefined) {
     throw new Error('typeName must be the name used to save prototype properties. Got: ' + typeName);
   }
@@ -264,27 +264,27 @@ domInterceptor.unpatchOnePrototype = function(type, typeName) {
     }
     catch(e) {}
   });
-  domInterceptor._listener = domInterceptor.listener;
+  domInterceptor._callListenerWithMessage = domInterceptor.listener;
 };
 
 /**
 * Unpatches all the elements on the page that were patched.
 */
 domInterceptor.unpatchExistingElements = function() {
-  domInterceptor._listener = domInterceptor.NOOP;
+  domInterceptor._callListenerWithMessage = domInterceptor.NOOP;
   var elements = document.getElementsByTagName('*');
   for(var i = 0; i < elements.length; i++) {
     var originalElement = domInterceptor.savedElements[i];
     domInterceptor.unpatchElementProperties(elements[i], originalElement);
   }
-  domInterceptor._listener = domInterceptor.listener;
+  domInterceptor._callListenerWithMessage = domInterceptor.listener;
 };
 
 /**
 * Helper function to unpatch all properties of a given element
 */
 domInterceptor.unpatchElementProperties = function(element, originalElement) {
-  domInterceptor._listener = domInterceptor.NOOP;
+  domInterceptor._callListenerWithMessage = domInterceptor.NOOP;
   domInterceptor.propertiesToPatch.forEach(function(prop) {
     Object.defineProperty(element, prop, {
       configurable: true,
@@ -296,7 +296,7 @@ domInterceptor.unpatchElementProperties = function(element, originalElement) {
       }
     });
   });
-  domInterceptor._listener = domInterceptor.listener;
+  domInterceptor._callListenerWithMessage = domInterceptor.listener;
 };
 
 }((typeof module !== 'undefined' && module && module.exports) ?
