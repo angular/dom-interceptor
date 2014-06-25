@@ -7,18 +7,18 @@
 * prototypes as well as triggering the patching of individual
 * HTML elements.
 **/
-domInterceptor.addManipulationListener = function(listener) {
+domInterceptor.addManipulationListener = function(loudError, debugStatement, propOnly) {
   domInterceptor._listener = domInterceptor.NOOP;
-  domInterceptor.setListener(listener);
-  domInterceptor.patchExistingElements();
-  domInterceptor.collectUnalteredPrototypeProperties('Element', Element);
+  domInterceptor.setListenerDefaults(loudError, debugStatement, propOnly);
+  domInterceptor.collectUnalteredPrototypeProperties(Element, 'Element');
   domInterceptor.patchOnePrototype(Element);
-  domInterceptor.collectUnalteredPrototypeProperties('Node', Node);
+  domInterceptor.collectUnalteredPrototypeProperties(Node, 'Node');
   domInterceptor.patchOnePrototype(Node);
-  domInterceptor.collectUnalteredPrototypeProperties('EventTarget', EventTarget);
+  domInterceptor.collectUnalteredPrototypeProperties(EventTarget, 'EventTarget');
   domInterceptor.patchOnePrototype(EventTarget);
-  domInterceptor.collectUnalteredPrototypeProperties('Document', Document);
+  domInterceptor.collectUnalteredPrototypeProperties(Document, 'Document');
   domInterceptor.patchOnePrototype(Document);
+  domInterceptor.patchExistingElements();
   domInterceptor._listener = domInterceptor.listener;
 };
 
@@ -29,15 +29,10 @@ domInterceptor.addManipulationListener = function(listener) {
 * standards, leave domInterceptor.listener as the default error
 * throwing function.
 */
-domInterceptor.setListener = function(listener) {
-  if(listener != undefined) {
-    if(typeof listener === 'function') {
-      domInterceptor.listener = listener;
-    }
-    else {
-      throw new Error('listener must be a function, got: ' + typeof listener);
-    }
-  }
+domInterceptor.setListenerDefaults = function(loudError, debugBreak, propOnly) {
+  loudError ? domInterceptor.loudError = true : domInterceptor.loudError = false;
+  debugBreak ? domInterceptor.debugBreak = true : domInterceptor.debugBreak = false;
+  propOnly ? domInterceptor.propOnly = true : domInterceptor.propOnly = false;
 };
 
 /**
@@ -46,9 +41,21 @@ domInterceptor.setListener = function(listener) {
 */
 domInterceptor._listener = domInterceptor.NOOP = function() {};
 
-domInterceptor.callListenerWithMessage = function(property) {
-  domInterceptor.listener();
-  //console.log(domInterceptor.defaultError + ' ' + property);
+domInterceptor.callListenerWithMessage = function(messageProperties) {
+  var message = messageProperties.property;
+  if(!domInterceptor.propOnly) {
+    message = messageProperties.message + ' ' + message;
+  }
+
+  if(domInterceptor.loudError) {
+    throw new Error(message);
+  }
+  else if(domInterceptor.debugBreak) {
+    debugger;
+  }
+  else {
+    console.log(message);
+  }
 };
 
 /**
@@ -57,76 +64,7 @@ domInterceptor.callListenerWithMessage = function(property) {
 */
 domInterceptor.defaultError = 'Angular best practices are to manipulate the DOM in the view. ' +
 'Remove DOM manipulation from the controller. ' +
-'Thrown because of manipulating property:';
-
-/**
-* While patching prototypes patches many of the DOM APIs,
-* some properties exist only on the elements themselves. This
-* function retrieves all the current elements on the page and
-* patches them to call the given listener function if manipulated.
-*/
-domInterceptor.patchExistingElements = function(listener) {
-  domInterceptor._listener = domInterceptor.NOOP;
-  var elements = document.getElementsByTagName('*');
-  for(var i = 0; i < elements.length; i++) {
-    domInterceptor.save(elements[i], i);
-    domInterceptor.patchElementProperties(elements[i], listener);
-  }
-  domInterceptor.setListener(listener);
-  domInterceptor._listener = domInterceptor.listener;
-};
-
-/**
-* List of DOM API properties to patch on individual elements.
-* These are properties not covered by patching of the prototypes
-* and must therefore be patched on the elements themselves.
-**/
-domInterceptor.propertiesToPatch = ['innerHTML', 'parentElement'];
-
-/**
-* Object to hold original version of patched elements
-*/
-domInterceptor.savedElements = {};
-
-/**
-* Helper function to patch specified properties of a given
-* element to call the listener function on getting or setting
-**/
-domInterceptor.patchElementProperties = function(element, listener) {
-  domInterceptor._listener = domInterceptor.NOOP;
-  domInterceptor.setListener(listener);
-  var real = {};
-  domInterceptor.propertiesToPatch.forEach(function(prop) {
-    real[prop] = element[prop];
-    Object.defineProperty(element, prop, {
-      configurable: true,
-      get: function() {
-        domInterceptor.callListenerWithMessage(prop);
-        return real[prop];
-      },
-      set: function(newValue) {
-        domInterceptor.callListenerWithMessage(prop);
-        real[prop] = element[prop];
-      }
-    });
-  });
-  domInterceptor._listener = domInterceptor.listener;
-  return element;
-};
-
-/**
-* Function to save properties that will be patched
-* Each element has an object associating with it the patched properties
-**/
-domInterceptor.save = function(element, index) {
-  domInterceptor._listener = domInterceptor.NOOP;
-  var elementProperties = {};
-  domInterceptor.propertiesToPatch.forEach(function(prop) {
-    elementProperties[prop] = element[prop];
-  });
-  domInterceptor.savedElements[index] = elementProperties;
-  domInterceptor._listener = domInterceptor.listener;
-};
+'Warning because of manipulating property:';
 
 /**
 * Object to preserve all the original properties
@@ -139,11 +77,14 @@ domInterceptor.originalProperties = {};
 * When patching is removed, all prototype properties
 * are set back to these original values
 **/
-domInterceptor.collectUnalteredPrototypeProperties = function(typeName, type) {
+domInterceptor.collectUnalteredPrototypeProperties = function(type, typeName) {
   domInterceptor._listener = domInterceptor.NOOP;
   if(!type || !type.prototype) {
     throw new Error('collectUnalteredPrototypeProperties() needs a .prototype to collect properties from. ' +
       type + '.prototype is undefined.');
+  }
+  else if(!typeName) {
+    throw new Error('typeName is required to save properties, got: ' + typeName);
   }
   var objectProperties = {};
   var objectPropertyNames = Object.getOwnPropertyNames(type.prototype);
@@ -165,8 +106,7 @@ domInterceptor.collectUnalteredPrototypeProperties = function(typeName, type) {
 * call to listener, a function passed as a parameter.
 * If no listener function is provided, the default listener is used.
 */
-domInterceptor.patchOnePrototype = function(type, listener) {
-  domInterceptor.setListener(listener);
+domInterceptor.patchOnePrototype = function(type) {
   domInterceptor._listener = domInterceptor.NOOP;
   if (!type || !type.prototype) {
     throw new Error('collectPrototypeProperties() needs a .prototype to collect properties from. ' +
@@ -182,7 +122,7 @@ domInterceptor.patchOnePrototype = function(type, listener) {
           if (typeof desc.value === 'function') {
             var originalValue = desc.value;
             desc.value = function () {
-              domInterceptor.callListenerWithMessage(prop);
+              domInterceptor.callListenerWithMessage({message: domInterceptor.message, property: prop});
               return originalValue.apply(this, arguments);
             };
           }
@@ -208,7 +148,7 @@ domInterceptor.patchOnePrototype = function(type, listener) {
         try {
           var original = type.prototype[prop];
           type.prototype[prop] = function () {
-            domInterceptor.callListenerWithMessage(prop);
+            domInterceptor.callListenerWithMessage({message: domInterceptor.message, property: prop});
             return original.apply(this, arguments);
           };
         }
@@ -216,6 +156,73 @@ domInterceptor.patchOnePrototype = function(type, listener) {
       }
     }
   });
+  domInterceptor._listener = domInterceptor.listener;
+};
+
+/**
+* While patching prototypes patches many of the DOM APIs,
+* some properties exist only on the elements themselves. This
+* function retrieves all the current elements on the page and
+* patches them to call the given listener function if manipulated.
+*/
+domInterceptor.patchExistingElements = function() {
+  domInterceptor._listener = domInterceptor.NOOP;
+  var elements = document.getElementsByTagName('*');
+  for(var i = 0; i < elements.length; i++) {
+    domInterceptor.save(elements[i], i);
+    domInterceptor.patchElementProperties(elements[i]);
+  }
+  domInterceptor._listener = domInterceptor.listener;
+};
+
+/**
+* List of DOM API properties to patch on individual elements.
+* These are properties not covered by patching of the prototypes
+* and must therefore be patched on the elements themselves.
+**/
+domInterceptor.propertiesToPatch = ['innerHTML', 'parentElement'];
+
+/**
+* Object to hold original version of patched elements
+*/
+domInterceptor.savedElements = {};
+
+/**
+* Helper function to patch specified properties of a given
+* element to call the listener function on getting or setting
+**/
+domInterceptor.patchElementProperties = function(element) {
+  domInterceptor._listener = domInterceptor.NOOP;
+  var real = {};
+  domInterceptor.propertiesToPatch.forEach(function(prop) {
+    real[prop] = element[prop];
+    Object.defineProperty(element, prop, {
+      configurable: true,
+      get: function() {
+        domInterceptor.callListenerWithMessage({message: domInterceptor.message, property: prop});
+        return real[prop];
+      },
+      set: function(newValue) {
+        domInterceptor.callListenerWithMessage({message: domInterceptor.message, property: prop});
+        real[prop] = element[prop];
+      }
+    });
+  });
+  domInterceptor._listener = domInterceptor.listener;
+  return element;
+};
+
+/**
+* Function to save properties that will be patched
+* Each element has an object associating with it the patched properties
+**/
+domInterceptor.save = function(element, index) {
+  domInterceptor._listener = domInterceptor.NOOP;
+  var elementProperties = {};
+  domInterceptor.propertiesToPatch.forEach(function(prop) {
+    elementProperties[prop] = element[prop];
+  });
+  domInterceptor.savedElements[index] = elementProperties;
   domInterceptor._listener = domInterceptor.listener;
 };
 

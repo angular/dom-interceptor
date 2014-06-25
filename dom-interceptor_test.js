@@ -1,12 +1,12 @@
 describe('domInterceptor', function() {
   beforeEach(function() {
-    domInterceptor.listener = jasmine.createSpy('listener');
+    domInterceptor.callListenerWithMessage = jasmine.createSpy('callListenerWithMessage');
   });
 
   describe('collectUnalteredPrototypeProperties()', function() {
     it('should collect the unpatched properties of prototypes', function() {
       var objectPropertyNames = Object.getOwnPropertyNames(Element.prototype);
-      var originalProperties = domInterceptor.collectUnalteredPrototypeProperties('Element', Element);
+      var originalProperties = domInterceptor.collectUnalteredPrototypeProperties(Element, 'Element');
       expect(originalProperties[objectPropertyNames[0]]).toBe(Element.prototype[objectPropertyNames[0]]);
     });
 
@@ -14,13 +14,13 @@ describe('domInterceptor', function() {
     it('should throw if typeName is not provided', function() {
       expect(function() {
           domInterceptor.collectUnalteredPrototypeProperties(Element);
-      }).toThrow('collectUnalteredPrototypeProperties() needs a .prototype to collect properties from. undefined.prototype is undefined.');
+      }).toThrow('typeName is required to save properties, got: undefined');
     });
 
 
     it('should throw if type.prototype is undefined', function() {
       expect(function() {
-          domInterceptor.collectUnalteredPrototypeProperties('Body', document.body);
+          domInterceptor.collectUnalteredPrototypeProperties(document.body, 'Body');
       }).toThrow('collectUnalteredPrototypeProperties() needs a .prototype to collect properties from. [object HTMLBodyElement].prototype is undefined.');
     });
   });
@@ -40,9 +40,9 @@ describe('domInterceptor', function() {
           testElement.setAttribute('id', 'test');
           document.body.appendChild(testElement);
           var testProperty = 'innerHTML';
-          domInterceptor.patchExistingElements(domInterceptor.listener);
+          domInterceptor.patchExistingElements();
           testElement[testProperty] = 'new innerHTML value';
-          expect(domInterceptor.listener).toHaveBeenCalled();
+          expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
           domInterceptor.unpatchExistingElements();
       });
   });
@@ -52,10 +52,10 @@ describe('domInterceptor', function() {
       var testProperty = 'innerHTML';
       var element = document.createElement('a');
       var copy = element;
-      domInterceptor.patchElementProperties(element, domInterceptor.listener);
-      expect(domInterceptor.listener).not.toHaveBeenCalled();
+      domInterceptor.patchElementProperties(element);
+      expect(domInterceptor.callListenerWithMessage).not.toHaveBeenCalled();
       element.innerHTML = 'new innerHTML value';
-      expect(domInterceptor.listener).toHaveBeenCalled();
+      expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
       domInterceptor.unpatchElementProperties(element, copy);
     });
 
@@ -64,10 +64,10 @@ describe('domInterceptor', function() {
       var element = document.createElement('a');
       var copy = element;
       expect(element.innerHTML).toBe('');
-      domInterceptor.patchElementProperties(element, domInterceptor.listener);
+      domInterceptor.patchElementProperties(element);
       element.innerHTML = 'Testing Value';
       expect(element.innerHTML).toBe('');
-      expect(domInterceptor.listener).toHaveBeenCalled();
+      expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
       domInterceptor.unpatchElementProperties(element, copy);
     });
   });
@@ -89,11 +89,11 @@ describe('domInterceptor', function() {
           expect(document.getElementById('testNew').innerHTML).toBe('testing html');
 
 
-          domInterceptor.patchExistingElements(domInterceptor.listener);
+          domInterceptor.patchExistingElements();
 
           expect(testElement.innerHTML).toBe('testing html');
           expect(document.getElementById('testNew').innerHTML).toBe('testing html');
-          expect(domInterceptor.listener).toHaveBeenCalled();
+          expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
 
           domInterceptor.unpatchExistingElements();
 
@@ -105,18 +105,18 @@ describe('domInterceptor', function() {
     it('should unpatch target properties patched on HTML objects', function() {
       var element = document.createElement('a');
       expect(element.innerHTML).toBe('');
-      domInterceptor.patchElementProperties(element, domInterceptor.listener);
+      domInterceptor.patchElementProperties(element);
       expect(element.innerHTML).toBe('');
-      expect(domInterceptor.listener).toHaveBeenCalled();
+      expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
       var originalElementProperties = {
           'innerHTML': '',
           'parentElement': ''
       }
       domInterceptor.unpatchElementProperties(element, originalElementProperties);
 
-      domInterceptor.listener.reset();
+      domInterceptor.callListenerWithMessage.reset();
       expect(element.innerHTML).toBe('');
-      expect(domInterceptor.listener).not.toHaveBeenCalled();
+      expect(domInterceptor.callListenerWithMessage).not.toHaveBeenCalled();
     });
   });
   describe('patchOnePrototype()', function() {
@@ -125,41 +125,9 @@ describe('domInterceptor', function() {
         var testProperty = objectProperties[0];
         var originalFunction = Element.prototype[testProperty];
         expect(Element.prototype[testProperty]).toBe(originalFunction);
+        domInterceptor.collectUnalteredPrototypeProperties(Element, 'Element');
         domInterceptor.patchOnePrototype(Element);
         expect(Element.prototype[testProperty]).not.toBe(originalFunction);
-        domInterceptor.unpatchOnePrototype(Element, 'Element');
-      });
-
-
-      it('should patch all properties of a given object .prototype with a specified function',
-        function() {
-          var objectProperties = Object.getOwnPropertyNames(Element.prototype);
-          var testProperty = objectProperties[0];
-          var testObject = {};
-          testObject.exampleFunction = function() {};
-          spyOn(testObject, 'exampleFunction');
-          var originalFunction = Element.prototype[testProperty];
-          expect(Element.prototype[testProperty]).toBe(originalFunction);
-          domInterceptor.patchOnePrototype(Element, testObject.exampleFunction);
-          var elem = document.createElement('div');
-          elem.setAttribute('id', 'test');
-          expect(Element.prototype[testProperty]).not.toBe(originalFunction);
-          expect(testObject.exampleFunction).toHaveBeenCalled();
-          domInterceptor.unpatchOnePrototype(Element, 'Element');
-      });
-
-
-      it('should patch .prototype with a default listener if none is provided', function() {
-        var objectProperties = Object.getOwnPropertyNames(Element.prototype);
-        var testProperty = objectProperties[0];
-
-        var originalFunction = Element.prototype[testProperty];
-        expect(Element.prototype[testProperty]).toBe(originalFunction);
-        domInterceptor.patchOnePrototype(Element);
-        var elem = document.createElement('div');
-        elem.setAttribute('id', 'test');
-        expect(Element.prototype[testProperty]).not.toBe(originalFunction);
-        expect(domInterceptor.listener).toHaveBeenCalled();
         domInterceptor.unpatchOnePrototype(Element, 'Element');
       });
   });
@@ -167,7 +135,7 @@ describe('domInterceptor', function() {
     it('should patch existing DOM elements', function() {
       spyOn(domInterceptor, 'patchExistingElements');
       expect(domInterceptor.patchExistingElements).not.toHaveBeenCalled();
-      domInterceptor.addManipulationListener(domInterceptor.listener);
+      domInterceptor.addManipulationListener(domInterceptor.callListenerWithMessage);
       expect(domInterceptor.patchExistingElements).toHaveBeenCalled();
       domInterceptor.removeManipulationListener();
     });
@@ -176,7 +144,7 @@ describe('domInterceptor', function() {
     it('should patch the functions of Element.prototype', function() {
       spyOn(domInterceptor, 'patchOnePrototype');
       expect(domInterceptor.patchOnePrototype).not.toHaveBeenCalled();
-      domInterceptor.addManipulationListener(domInterceptor.listener);
+      domInterceptor.addManipulationListener(domInterceptor.callListenerWithMessage);
       expect(domInterceptor.patchOnePrototype).toHaveBeenCalledWith(Element);
       domInterceptor.removeManipulationListener();
     });
@@ -185,7 +153,7 @@ describe('domInterceptor', function() {
     it('should patch the functions of Node.prototype', function() {
       spyOn(domInterceptor, 'patchOnePrototype');
       expect(domInterceptor.patchOnePrototype).not.toHaveBeenCalled();
-      domInterceptor.addManipulationListener(domInterceptor.listener);
+      domInterceptor.addManipulationListener(domInterceptor.callListenerWithMessage);
       expect(domInterceptor.patchOnePrototype).toHaveBeenCalledWith(Node);
       domInterceptor.removeManipulationListener();
     });
@@ -194,7 +162,7 @@ describe('domInterceptor', function() {
     it('should patch the functions of EventTarget.prototype', function() {
       spyOn(domInterceptor, 'patchOnePrototype');
       expect(domInterceptor.patchOnePrototype).not.toHaveBeenCalled();
-      domInterceptor.addManipulationListener(domInterceptor.listener);
+      domInterceptor.addManipulationListener(domInterceptor.callListenerWithMessage);
       expect(domInterceptor.patchOnePrototype).toHaveBeenCalledWith(EventTarget);
       domInterceptor.removeManipulationListener();
     });
@@ -203,88 +171,58 @@ describe('domInterceptor', function() {
     it('should patch the functions of Document.prototype', function() {
      spyOn(domInterceptor, 'patchOnePrototype');
       expect(domInterceptor.patchOnePrototype).not.toHaveBeenCalled();
-      domInterceptor.addManipulationListener(domInterceptor.listener);
+      domInterceptor.addManipulationListener(domInterceptor.callListenerWithMessage);
       expect(domInterceptor.patchOnePrototype).toHaveBeenCalledWith(Document);
       domInterceptor.removeManipulationListener();
     });
 
 
-    it('should patch the prototype functions to call the listener param', function() {
-      var testFunctionObject = {};
-      testFunctionObject.testingFunction = function(){
-          return 'DOM manipulation detected';
-      }
-      spyOn(testFunctionObject, 'testingFunction');
-      expect(testFunctionObject.testingFunction).not.toHaveBeenCalled();
-      domInterceptor.addManipulationListener(testFunctionObject.testingFunction);
-      var element = document.createElement('a');
-      element.getAttribute('NamedNodeMap');
-      expect(testFunctionObject.testingFunction).toHaveBeenCalled();
-      domInterceptor.removeManipulationListener();
+    it('should create a listener that conforms to the users default parameters', function() {
+
     });
 
 
     it('should detect getting element.innerHTML', function() {
-      var testObj2 = {};
-      testObj2.testFunction = function(){};
-      spyOn(testObj2, 'testFunction');
-      expect(testObj2.testFunction).not.toHaveBeenCalled();
       var element = document.createElement('div');
-      domInterceptor.patchElementProperties(element, testObj2.testFunction);
+      domInterceptor.addManipulationListener();
       var inner = element['innerHTML'];
-      expect(testObj2.testFunction).toHaveBeenCalled();
+      expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
       domInterceptor.removeManipulationListener();
     });
 
 
     it('should detect setting element.innerHTML', function() {
-      var testObj3 = {};
-      testObj3.testFunction = function(){};
-      spyOn(testObj3, 'testFunction');
-      expect(testObj3.testFunction).not.toHaveBeenCalled();
       var element = document.createElement('div');
-      domInterceptor.patchElementProperties(element, testObj3.testFunction);
+      domInterceptor.addManipulationListener();
       element.innerHTML = 'blank';
-      expect(testObj3.testFunction).toHaveBeenCalled();
+      expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
       domInterceptor.removeManipulationListener();
     });
 
 
     it('should detect getting element.parentElement', function() {
-      var testObj4 = {};
-      testObj4.testFunction = function(){};
-      spyOn(testObj4, 'testFunction');
-      expect(testObj4.testFunction).not.toHaveBeenCalled();
       var element = document.createElement('div');
-      domInterceptor.patchElementProperties(element, testObj4.testFunction);
+      domInterceptor.addManipulationListener();
       var parent = element.parentElement;
-      expect(testObj4.testFunction).toHaveBeenCalled();
+      expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
       domInterceptor.removeManipulationListener();
     });
 
 
     it('should detect calling element.addEventListener', function() {
-      var testObj5 = {};
-      testObj5.testFunction = function(){};
-      spyOn(testObj5, 'testFunction');
-      domInterceptor.addManipulationListener(testObj5.testFunction);
-      expect(testObj5.testFunction).not.toHaveBeenCalled();
+      domInterceptor.addManipulationListener();
       var element = document.createElement('div');
       var parent = element.addEventListener('click', function(e){});
-      expect(testObj5.testFunction).toHaveBeenCalled();
+      expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
       domInterceptor.removeManipulationListener();
     });
 
 
     it('should detect calling element.remove', function() {
-      var testObj6 = {};
-      testObj6.testFunction = function(){};
-      spyOn(testObj6, 'testFunction');
-      domInterceptor.addManipulationListener(testObj6.testFunction);
-      expect(testObj6.testFunction).not.toHaveBeenCalled();
+      domInterceptor.addManipulationListener();
       var element = document.createElement('div');
       element.remove();
-      expect(testObj6.testFunction).toHaveBeenCalled();
+      expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
       domInterceptor.removeManipulationListener();
     });
 
@@ -293,14 +231,10 @@ describe('domInterceptor', function() {
       var parentElement = document.createElement('div');
       var referenceElement = document.createElement('div');
       parentElement.appendChild(referenceElement);
-      var testObj7 = {};
-      testObj7.testFunction = function(){};
-      spyOn(testObj7, 'testFunction');
-      domInterceptor.addManipulationListener(testObj7.testFunction);
-      expect(testObj7.testFunction).not.toHaveBeenCalled();
+      domInterceptor.addManipulationListener();
       var newElement = document.createElement('div');
       parentElement.insertBefore(newElement, referenceElement);
-      expect(testObj7.testFunction).toHaveBeenCalled();
+      expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
       domInterceptor.removeManipulationListener();
     });
 
@@ -308,27 +242,21 @@ describe('domInterceptor', function() {
     it('should detect calling element.appendChild', function() {
       var parentElement = document.createElement('div');
       var childElement = document.createElement('div');
-      var testObj8 = {};
-      testObj8.testFunction = function(){
-        return 'test function';
-      };
-      spyOn(testObj8, 'testFunction');
-      domInterceptor.addManipulationListener(testObj8.testFunction);
-      expect(testObj8.testFunction).not.toHaveBeenCalled();
+      domInterceptor.addManipulationListener();
       parentElement.appendChild(childElement);
-      expect(testObj8.testFunction).toHaveBeenCalled();
+      expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
       domInterceptor.removeManipulationListener();
     });
   });
+
   describe('unpatchOnePrototype()', function() {
     it('should unpatch the .prototype properties of the given parameter', function() {
-      var mockObject = {};
-      mockObject.testFunction = function(){};
       var objectProperties = Object.getOwnPropertyNames(Element.prototype);
       var testProperty = objectProperties[0];
       var originalFunction = Element.prototype[testProperty];
       expect(Element.prototype[testProperty]).toBe(originalFunction);
-      domInterceptor.patchOnePrototype(Element, mockObject.testFunction);
+      domInterceptor.collectUnalteredPrototypeProperties(Element, 'Element');
+      domInterceptor.patchOnePrototype(Element);
       expect(Element.prototype[testProperty]).not.toBe(originalFunction);
       domInterceptor.unpatchOnePrototype(Element, 'Element');
       expect(Element.prototype[testProperty]).toBe(originalFunction);
@@ -381,33 +309,55 @@ describe('domInterceptor', function() {
       domInterceptor.removeManipulationListener();
       expect(domInterceptor.unpatchExistingElements).toHaveBeenCalled();
     });
-
-
-
   });
 
-  describe('setListener()', function() {
-    it('should set the listener function to a parameter', function() {
-      var newListener = function () {
-        return 'This is a new listener for controller manipulations.';
-      }
-      expect(domInterceptor.listener).not.toBe(newListener);
-      domInterceptor.setListener(newListener);
-      expect(domInterceptor.listener).toBe(newListener);
+  describe('listener properties', function() {
+    beforeEach(function() {
+      domInterceptor.callListenerWithMessage = function(messageProperties) {
+        var message = messageProperties.property;
+        if(!domInterceptor.propOnly) {
+          message = messageProperties.message + ' ' + message;
+        }
+
+        if(domInterceptor.loudError) {
+          throw new Error(message);
+        }
+        else if(domInterceptor.debugBreak) {
+          debugger;
+        }
+        else {
+          console.log(message);
+        }
+      };
     });
 
-
-    it('should throw if provided an invalid parameter', function() {
+    it('should throw an error if loudError default is set', function() {
+      domInterceptor.setListenerDefaults(true, false, false);
       expect(function() {
-        domInterceptor.setListener('This is a listener');
-      }).toThrow('listener must be a function, got: string');
+        domInterceptor.callListenerWithMessage({message: 'A message:', property: 'A property'});
+      }).toThrow();
     });
 
 
-    it('should default to the current listener if no parameter is provided', function() {
-      var originalListener = domInterceptor.listener;
-      domInterceptor.setListener();
-      expect(originalListener).toBe(domInterceptor.listener);
+    it('should pause the debugger if the debugBreak parameter is set', function() {
+      domInterceptor.setListenerDefaults(false, true, false);
+      expect(domInterceptor.debugBreak).toEqual(true);
+    });
+
+
+    it('should only log the property if the propOnly parameter is set', function() {
+      domInterceptor.setListenerDefaults(false, false, true);
+      console.log = jasmine.createSpy('log');
+      domInterceptor.callListenerWithMessage({message: 'A message:', property: 'A property'});
+      expect(console.log).toHaveBeenCalledWith('A property');
+    });
+
+
+    it('should log a message to the console as the default', function() {
+      domInterceptor.setListenerDefaults(false, false, false);
+      console.log = jasmine.createSpy('log');
+      domInterceptor.callListenerWithMessage({message: 'A message:', property: 'A property'});
+      expect(console.log).toHaveBeenCalledWith('A message: A property');
     });
   });
 });
