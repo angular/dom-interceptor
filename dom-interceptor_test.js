@@ -31,11 +31,9 @@ describe('domInterceptor', function() {
           testElement.setAttribute('id', 'test');
           document.body.appendChild(testElement);
           var testProperty = 'innerHTML';
-          expect(testElement[testProperty]).toBe('');
-          expect(document.getElementById('test')[testProperty]).toBe('');
           domInterceptor.patchExistingElements(domInterceptor.listener);
-          expect(testElement[testProperty]).not.toBe('')
-          expect(document.getElementById('test')[testProperty]).not.toBe('');
+          testElement[testProperty] = 'new innerHTML value';
+          expect(domInterceptor.listener).toHaveBeenCalled();
           domInterceptor.unpatchExistingElements();
       });
   });
@@ -43,71 +41,72 @@ describe('domInterceptor', function() {
   describe('patchProperties()', function() {
     it('should patch target properties of created HTML objects', function() {
       var testProperty = 'innerHTML';
-      var testingFunction = function() {
-        return 'testing';
-      };
       var element = document.createElement('a');
-      expect(element[testProperty]).toBe('');
-      domInterceptor.patchElementProperties(element, testingFunction);
-      expect(element[testProperty]).not.toBe('');
+      var copy = element;
+      domInterceptor.patchElementProperties(element, domInterceptor.listener);
+      expect(domInterceptor.listener).not.toHaveBeenCalled();
+      element.innerHTML = 'new innerHTML value';
+      expect(domInterceptor.listener).toHaveBeenCalled();
+      domInterceptor.unpatchElementProperties(element, copy);
     });
 
 
-    it('should preserve the functionality of DOM APIS that are patched', function() {
-      var testProperty = 'innerHTML';
-      var testObject = {};
-      testObject.testingFunction = function() {
-        return 'testing';
-      };
+    it('should not preserve the functionality of DOM APIS that are patched on individual elements', function() {
       var element = document.createElement('a');
-      expect(element[testProperty]).toBe('');
-      spyOn(testObject, 'testingFunction');
-      domInterceptor.patchElementProperties(element, testObject.testingFunction);
-      element[testProperty] = 'Testing Value';
-      expect(element[testProperty]).toBe(undefined);
-      testObject.testingFunction.reset();
-      expect(testObject.testingFunction).not.toHaveBeenCalled();
-      element[testProperty] = 'Another Value';
-      expect(testObject.testingFunction).toHaveBeenCalled();
+      var copy = element;
+      expect(element.innerHTML).toBe('');
+      domInterceptor.patchElementProperties(element, domInterceptor.listener);
+      element.innerHTML = 'Testing Value';
+      expect(element.innerHTML).toBe('');
+      expect(domInterceptor.listener).toHaveBeenCalled();
+      domInterceptor.unpatchElementProperties(element, copy);
     });
   });
   describe('unpatchExistingElements()', function() {
       it('should patch existing elements to protect from manipulation', function() {
-          var testProperty = 'innerHTML';
           var testElement = document.createElement('div');
-          testElement[testProperty] = 'testing html';
+          testElement.innerHTML = 'testing html';
           testElement.setAttribute('id', 'testNew');
+
           var testElement2 = document.createElement('div');
-          testElement2[testProperty] = 'different html';
+          testElement2.innerHTML = 'different html';
           testElement2.setAttribute('id', 'test2');
+
           document.body.appendChild(testElement);
           document.body.appendChild(testElement2);
-          expect(testElement[testProperty]).toBe('testing html');
-          expect(document.getElementById('testNew')[testProperty]).toBe('testing html');
+
+          expect(testElement.innerHTML).toBe('testing html');
+          expect(document.getElementById('testNew').innerHTML).toBe('testing html');
+
+
           domInterceptor.patchExistingElements(domInterceptor.listener);
-          expect(testElement[testProperty]).not.toBe('testing html');
-          expect(document.getElementById('testNew')[testProperty]).not.toBe('testing html');
+
+          expect(testElement.innerHTML).toBe('testing html');
+          expect(document.getElementById('testNew').innerHTML).toBe('testing html');
+          expect(domInterceptor.listener).toHaveBeenCalled();
+
           domInterceptor.unpatchExistingElements();
-          expect(document.getElementById('testNew')[testProperty]).toBe('testing html');
-          expect(document.getElementById('test2')[testProperty]).toBe('different html');
+
+          expect(document.getElementById('testNew').innerHTML).toBe('testing html');
+          expect(document.getElementById('test2').innerHTML).toBe('different html');
       });
   });
   describe('unpatchElementProperties()', function() {
     it('should unpatch target properties patched on HTML objects', function() {
-      var testProperty = 'innerHTML';
-      var testingFunction = function() {
-        return 'testing';
-      };
       var element = document.createElement('a');
-      expect(element[testProperty]).toBe('');
-      domInterceptor.patchElementProperties(element, testingFunction);
-      expect(element[testProperty]).not.toBe('');
+      expect(element.innerHTML).toBe('');
+      domInterceptor.patchElementProperties(element, domInterceptor.listener);
+      expect(element.innerHTML).toBe('');
+      expect(domInterceptor.listener).toHaveBeenCalled();
       var originalElementProperties = {
           'innerHTML': '',
           'parentElement': ''
       }
       domInterceptor.unpatchElementProperties(element, originalElementProperties);
-      expect(element[testProperty]).toBe('');
+
+      domInterceptor.listener.reset();
+      expect(element.innerHTML).toBe('');
+      expect(domInterceptor.listener).not.toHaveBeenCalled();
     });
   });
   describe('patchOnePrototype()', function() {
