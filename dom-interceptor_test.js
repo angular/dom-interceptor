@@ -88,7 +88,6 @@ describe('domInterceptor', function() {
           expect(testElement.innerHTML).toBe('testing html');
           expect(document.getElementById('testNew').innerHTML).toBe('testing html');
 
-
           domInterceptor.patchExistingElements();
 
           expect(testElement.innerHTML).toBe('testing html');
@@ -367,3 +366,4 @@ describe('domInterceptor', function() {
     });
   });
 });
+

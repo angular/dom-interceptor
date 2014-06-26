@@ -113,11 +113,11 @@ domInterceptor.collectUnalteredPrototypeProperties = function(type, typeName) {
 * If no listener function is provided, the default listener is used.
 */
 domInterceptor.patchOnePrototype = function(type) {
-  domInterceptor.listener = domInterceptor._listener;
-  // if (!type || !type.prototype) {
-  //   throw new Error('collectPrototypeProperties() needs a .prototype to collect properties from. ' +
-  //     type + '.prototype is undefined.');
-  // }
+  //domInterceptor.listener = domInterceptor._listener;
+  if (!type || !type.prototype) {
+    throw new Error('collectPrototypeProperties() needs a .prototype to collect properties from. ' +
+      type + '.prototype is undefined.');
+  }
   var objectProperties = Object.getOwnPropertyNames(type.prototype);
   objectProperties.forEach(function(prop) {
     //Access of some prototype values may throw an error
@@ -162,7 +162,7 @@ domInterceptor.patchOnePrototype = function(type) {
       }
     }
   });
-  domInterceptor.listener = domInterceptor._listener;
+  //domInterceptor.listener = domInterceptor._listener;
 };
 
 /**
