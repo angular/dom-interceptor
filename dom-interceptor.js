@@ -7,7 +7,7 @@
 * prototypes as well as triggering the patching of individual
 * HTML elements.
 **/
-domInterceptor.addManipulationListener = function(loudError, debugStatement, propOnly) {
+domInterceptor.addManipulationListener = function(loudError, debugStatement, propOnly, includeLine) {
   domInterceptor.listener = domInterceptor._listener;
   domInterceptor.setListenerDefaults(loudError, debugStatement, propOnly);
   domInterceptor.collectUnalteredPrototypeProperties(Element, 'Element');
@@ -29,10 +29,11 @@ domInterceptor.addManipulationListener = function(loudError, debugStatement, pro
 * standards, leave domInterceptor.callListenerWithMessage as the default error
 * throwing function.
 */
-domInterceptor.setListenerDefaults = function(loudError, debugBreak, propOnly) {
+domInterceptor.setListenerDefaults = function(loudError, debugBreak, propOnly, includeLine) {
   loudError ? domInterceptor.loudError = true : domInterceptor.loudError = false;
   debugBreak ? domInterceptor.debugBreak = true : domInterceptor.debugBreak = false;
   propOnly ? domInterceptor.propOnly = true : domInterceptor.propOnly = false;
+  includeLine ? domInterceptor.includeLine = true : domInterceptor.includeLine = false;
 };
 
 domInterceptor._listener = domInterceptor.NOOP = function() {};
@@ -53,6 +54,13 @@ domInterceptor.callListenerWithMessage = function(messageProperties) {
     message = messageProperties.message + ' ' + message;
   }
 
+  if(domInterceptor.includeLine) {
+    var e = new Error();
+    //Find the line in the user's program rather than in this service
+    var lineNum = e.stack.split('\n')[3];
+    message += '\n' + lineNum;
+  }
+
   if(domInterceptor.loudError) {
     throw new Error(message);
   }
@@ -62,6 +70,8 @@ domInterceptor.callListenerWithMessage = function(messageProperties) {
   else {
     console.log(message);
   }
+
+
 };
 
 /**
@@ -122,48 +132,48 @@ domInterceptor.patchOnePrototype = function(type) {
   objectProperties.forEach(function(prop) {
     //Access of some prototype values may throw an error
     try {
-    var desc = Object.getOwnPropertyDescriptor(type.prototype, prop);
-    if (desc) {
-      if (desc.configurable) {
-        if (desc.value) {
-          if (typeof desc.value === 'function') {
-            var originalValue = desc.value;
-            desc.value = function () {
-              domInterceptor.listener({message: domInterceptor.message, property: prop});
-              return originalValue.apply(this, arguments);
-            };
+      var desc = Object.getOwnPropertyDescriptor(type.prototype, prop);
+      if (desc) {
+        if (desc.configurable) {
+          if (desc.value) {
+            if (typeof desc.value === 'function') {
+              var originalValue = desc.value;
+              desc.value = function () {
+                domInterceptor.listener({message: domInterceptor.message, property: prop});
+                return originalValue.apply(this, arguments);
+              };
+            }
+          } else {
+            if (typeof desc.set === 'function') {
+              var originalSet = desc.set;
+              desc.set = function () {
+                domInterceptor.listener('set:' + prop);
+                return originalSet.apply(this, arguments);
+              };
+            }
+            if (typeof desc.get === 'function') {
+              var originalGet = desc.get;
+              desc.get = function () {
+                domInterceptor.listener('get:' + prop);
+                return originalGet.apply(this, arguments);
+              };
+            }
           }
-        } else {
-          if (typeof desc.set === 'function') {
-            var originalSet = desc.set;
-            desc.set = function () {
-              domInterceptor.listener('set:' + prop);
-              return originalSet.apply(this, arguments);
-            };
-          }
-          if (typeof desc.get === 'function') {
-            var originalGet = desc.get;
-            desc.get = function () {
-              domInterceptor.listener('get:' + prop);
-              return originalGet.apply(this, arguments);
-            };
-          }
-        }
 
-        Object.defineProperty(type.prototype, prop, desc);
-      } else if (desc.writable) {
-        try {
-          var original = type.prototype[prop];
-          type.prototype[prop] = function () {
-            domInterceptor.callListenerWithMessage({message: domInterceptor.message, property: prop});
-            return original.apply(this, arguments);
-          };
+          Object.defineProperty(type.prototype, prop, desc);
+        } else if (desc.writable) {
+          try {
+            var original = type.prototype[prop];
+            type.prototype[prop] = function () {
+              domInterceptor.callListenerWithMessage({message: domInterceptor.message, property: prop});
+              return original.apply(this, arguments);
+            };
+          }
+          catch (e) {}
         }
-        catch (e) {}
       }
     }
-  }
-  catch(e){}
+    catch(e){}
   });
   domInterceptor.listener = domInterceptor._listener;
 };
