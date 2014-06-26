@@ -175,8 +175,8 @@ describe('domInterceptor', function() {
 
     it('should create a listener that conforms to the users default parameters', function() {
       spyOn(domInterceptor, 'setListenerDefaults');
-      domInterceptor.addManipulationListener(true, true, true);
-      expect(domInterceptor.setListenerDefaults).toHaveBeenCalledWith(true, true, true);
+      domInterceptor.addManipulationListener(true, true, true, true);
+      expect(domInterceptor.setListenerDefaults).toHaveBeenCalledWith(true, true, true, true);
       domInterceptor.removeManipulationListener();
     });
 
@@ -337,7 +337,7 @@ describe('domInterceptor', function() {
     });
 
     it('should throw an error if loudError default is set', function() {
-      domInterceptor.setListenerDefaults(true, false, false);
+      domInterceptor.setListenerDefaults(true, false, false, true);
       expect(function() {
         domInterceptor.callListenerWithMessage({message: 'A message:', property: 'A property'});
       }).toThrow();
@@ -345,13 +345,13 @@ describe('domInterceptor', function() {
 
 
     it('should pause the debugger if the debugBreak parameter is set', function() {
-      domInterceptor.setListenerDefaults(false, true, false);
+      domInterceptor.setListenerDefaults(false, true, false, true);
       expect(domInterceptor.debugBreak).toEqual(true);
     });
 
 
     it('should only log the property if the propOnly parameter is set', function() {
-      domInterceptor.setListenerDefaults(false, false, true);
+      domInterceptor.setListenerDefaults(false, false, true, true);
       console.log = jasmine.createSpy('log');
       domInterceptor.callListenerWithMessage({message: 'A message:', property: 'A property'});
       expect(console.log).toHaveBeenCalledWith('A property');

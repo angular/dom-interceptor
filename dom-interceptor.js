@@ -9,7 +9,7 @@
 **/
 domInterceptor.addManipulationListener = function(loudError, debugStatement, propOnly, includeLine) {
   domInterceptor.listener = domInterceptor._listener;
-  domInterceptor.setListenerDefaults(loudError, debugStatement, propOnly);
+  domInterceptor.setListenerDefaults(loudError, debugStatement, propOnly, includeLine);
   domInterceptor.collectUnalteredPrototypeProperties(Element, 'Element');
   domInterceptor.patchOnePrototype(Element);
   domInterceptor.collectUnalteredPrototypeProperties(Node, 'Node');
@@ -50,15 +50,14 @@ domInterceptor.savedListener = function(messageProperties) {
 */
 domInterceptor.callListenerWithMessage = function(messageProperties) {
   var message = messageProperties.property;
-  if(!domInterceptor.propOnly) {
+  if (!domInterceptor.propOnly) {
     message = messageProperties.message + ' ' + message;
-  }
-
-  if(domInterceptor.includeLine) {
-    var e = new Error();
-    //Find the line in the user's program rather than in this service
-    var lineNum = e.stack.split('\n')[3];
-    message += '\n' + lineNum;
+    if (domInterceptor.includeLine) {
+      var e = new Error();
+      //Find the line in the user's program rather than in this service
+      var lineNum = e.stack.split('\n')[3];
+      message += '\n' + lineNum;
+    }
   }
 
   if(domInterceptor.loudError) {
