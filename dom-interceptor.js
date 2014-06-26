@@ -58,6 +58,7 @@ domInterceptor.callListenerWithMessage = function(messageProperties) {
       var lineNum = e.stack.split('\n')[4];
       message += '\n' + lineNum;
     }
+    domInterceptor.createMessageTable(message);
   }
 
   if(domInterceptor.loudError) {
