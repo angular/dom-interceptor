@@ -8,7 +8,7 @@
 * HTML elements.
 **/
 domInterceptor.addManipulationListener = function(loudError, debugStatement, propOnly) {
-  domInterceptor._callListenerWithMessage = domInterceptor.NOOP;
+  domInterceptor.listener = domInterceptor._listener;
   domInterceptor.setListenerDefaults(loudError, debugStatement, propOnly);
   domInterceptor.collectUnalteredPrototypeProperties(Element, 'Element');
   domInterceptor.patchOnePrototype(Element);
@@ -19,7 +19,7 @@ domInterceptor.addManipulationListener = function(loudError, debugStatement, pro
   domInterceptor.collectUnalteredPrototypeProperties(Document, 'Document');
   domInterceptor.patchOnePrototype(Document);
   domInterceptor.patchExistingElements();
-  domInterceptor._callListenerWithMessage = domInterceptor.callListenerWithMessage;
+  domInterceptor.listener = domInterceptor.savedListener;
 };
 
 /**
@@ -35,12 +35,18 @@ domInterceptor.setListenerDefaults = function(loudError, debugBreak, propOnly) {
   propOnly ? domInterceptor.propOnly = true : domInterceptor.propOnly = false;
 };
 
+domInterceptor._listener = domInterceptor.NOOP = function() {};
+
+domInterceptor.listener;
+
+domInterceptor.savedListener = function(messageProperties) {
+  domInterceptor.callListenerWithMessage(messageProperties);
+};
+
 /**
 * Error function thrown on detection of DOM manipulation.
 * May be overriden to throw custom error function if desired.
 */
-domInterceptor._callListenerWithMessage = domInterceptor.NOOP = function() {};
-
 domInterceptor.callListenerWithMessage = function(messageProperties) {
   var message = messageProperties.property;
   if(!domInterceptor.propOnly) {
@@ -78,7 +84,7 @@ domInterceptor.originalProperties = {};
 * are set back to these original values
 **/
 domInterceptor.collectUnalteredPrototypeProperties = function(type, typeName) {
-  domInterceptor._callListenerWithMessage = domInterceptor.NOOP;
+  domInterceptor.listener = domInterceptor._listener;
   if(!type || !type.prototype) {
     throw new Error('collectUnalteredPrototypeProperties() needs a .prototype to collect properties from. ' +
       type + '.prototype is undefined.');
@@ -95,7 +101,7 @@ domInterceptor.collectUnalteredPrototypeProperties = function(type, typeName) {
     }
     catch(e) {}
   });
-  domInterceptor._callListenerWithMessage = domInterceptor.callListenerWithMessage;
+  domInterceptor.listener = domInterceptor.savedListener;
   domInterceptor.originalProperties[typeName] = objectProperties;
   return objectProperties;
 };
@@ -107,7 +113,7 @@ domInterceptor.collectUnalteredPrototypeProperties = function(type, typeName) {
 * If no listener function is provided, the default listener is used.
 */
 domInterceptor.patchOnePrototype = function(type) {
-  domInterceptor._callListenerWithMessage = domInterceptor.NOOP;
+  domInterceptor.listener = domInterceptor._listener;
   if (!type || !type.prototype) {
     throw new Error('collectPrototypeProperties() needs a .prototype to collect properties from. ' +
       type + '.prototype is undefined.');
@@ -122,7 +128,7 @@ domInterceptor.patchOnePrototype = function(type) {
           if (typeof desc.value === 'function') {
             var originalValue = desc.value;
             desc.value = function () {
-              domInterceptor.callListenerWithMessage({message: domInterceptor.message, property: prop});
+              domInterceptor.listener({message: domInterceptor.message, property: prop});
               return originalValue.apply(this, arguments);
             };
           }
@@ -130,14 +136,14 @@ domInterceptor.patchOnePrototype = function(type) {
           if (typeof desc.set === 'function') {
             var originalSet = desc.set;
             desc.set = function () {
-              domInterceptor.callListenerWithMessage('set:' + prop);
+              domInterceptor.listener('set:' + prop);
               return originalSet.apply(this, arguments);
             };
           }
           if (typeof desc.get === 'function') {
             var originalGet = desc.get;
             desc.get = function () {
-              domInterceptor.callListenerWithMessage('get:' + prop);
+              domInterceptor.listener('get:' + prop);
               return originalGet.apply(this, arguments);
             };
           }
@@ -156,7 +162,7 @@ domInterceptor.patchOnePrototype = function(type) {
       }
     }
   });
-  domInterceptor._callListenerWithMessage = domInterceptor.callListenerWithMessage;
+  domInterceptor.listener = domInterceptor._listener;
 };
 
 /**
@@ -166,13 +172,13 @@ domInterceptor.patchOnePrototype = function(type) {
 * patches them to call the given listener function if manipulated.
 */
 domInterceptor.patchExistingElements = function() {
-  domInterceptor._callListenerWithMessage = domInterceptor.NOOP;
+  domInterceptor.listener = domInterceptor._listener;
   var elements = document.getElementsByTagName('*');
   for(var i = 0; i < elements.length; i++) {
     domInterceptor.save(elements[i], i);
     domInterceptor.patchElementProperties(elements[i]);
   }
-  domInterceptor._callListenerWithMessage = domInterceptor.callListenerWithMessage;
+  domInterceptor.listener = domInterceptor.savedListener;
 };
 
 /**
@@ -192,23 +198,23 @@ domInterceptor.savedElements = {};
 * element to call the listener function on getting or setting
 **/
 domInterceptor.patchElementProperties = function(element) {
-  domInterceptor._callListenerWithMessage = domInterceptor.NOOP;
+  domInterceptor.listener = domInterceptor._listener;
   var real = {};
   domInterceptor.propertiesToPatch.forEach(function(prop) {
     real[prop] = element[prop];
     Object.defineProperty(element, prop, {
       configurable: true,
       get: function() {
-        domInterceptor.callListenerWithMessage({message: domInterceptor.message, property: prop});
+        domInterceptor.listener({message: domInterceptor.message, property: prop});
         return real[prop];
       },
       set: function(newValue) {
-        domInterceptor.callListenerWithMessage({message: domInterceptor.message, property: prop});
+        domInterceptor.listener({message: domInterceptor.message, property: prop});
         real[prop] = element[prop];
       }
     });
   });
-  domInterceptor._callListenerWithMessage = domInterceptor.callListenerWithMessage;
+  domInterceptor.listener = domInterceptor.savedListener;
   return element;
 };
 
@@ -217,13 +223,13 @@ domInterceptor.patchElementProperties = function(element) {
 * Each element has an object associating with it the patched properties
 **/
 domInterceptor.save = function(element, index) {
-  domInterceptor._callListenerWithMessage = domInterceptor.NOOP;
+  domInterceptor.listener = domInterceptor._listener;
   var elementProperties = {};
   domInterceptor.propertiesToPatch.forEach(function(prop) {
     elementProperties[prop] = element[prop];
   });
   domInterceptor.savedElements[index] = elementProperties;
-  domInterceptor._callListenerWithMessage = domInterceptor.callListenerWithMessage;
+  domInterceptor.listener = domInterceptor._listener;
 };
 
 /**
@@ -233,13 +239,13 @@ domInterceptor.save = function(element, index) {
 * original state.
 **/
 domInterceptor.removeManipulationListener = function() {
-  domInterceptor._callListenerWithMessage = domInterceptor.NOOP;
+  domInterceptor.listener = domInterceptor._listener;
   domInterceptor.unpatchOnePrototype(Element, 'Element');
   domInterceptor.unpatchOnePrototype(Node, 'Node');
   domInterceptor.unpatchOnePrototype(EventTarget, 'EventTarget');
   domInterceptor.unpatchOnePrototype(Document, 'Document');
   domInterceptor.unpatchExistingElements();
-  domInterceptor._callListenerWithMessage = domInterceptor.callListenerWithMessage;
+  domInterceptor.listener = domInterceptor._listener;
 };
 
 
@@ -249,7 +255,7 @@ domInterceptor.removeManipulationListener = function() {
 * original values that were collected.
 **/
 domInterceptor.unpatchOnePrototype = function(type, typeName) {
-  domInterceptor._callListenerWithMessage = domInterceptor.NOOP;
+  domInterceptor.listener = domInterceptor._listener;
   if(typeName == undefined) {
     throw new Error('typeName must be the name used to save prototype properties. Got: ' + typeName);
   }
@@ -264,27 +270,27 @@ domInterceptor.unpatchOnePrototype = function(type, typeName) {
     }
     catch(e) {}
   });
-  domInterceptor._callListenerWithMessage = domInterceptor.callListenerWithMessage;
+  domInterceptor.listener = domInterceptor._listener;
 };
 
 /**
 * Unpatches all the elements on the page that were patched.
 */
 domInterceptor.unpatchExistingElements = function() {
-  domInterceptor._callListenerWithMessage = domInterceptor.NOOP;
+  domInterceptor.listener = domInterceptor._listener;
   var elements = document.getElementsByTagName('*');
   for(var i = 0; i < elements.length; i++) {
     var originalElement = domInterceptor.savedElements[i];
     domInterceptor.unpatchElementProperties(elements[i], originalElement);
   }
-  domInterceptor._callListenerWithMessage = domInterceptor.callListenerWithMessage;
+  domInterceptor.listener = domInterceptor._listener;
 };
 
 /**
 * Helper function to unpatch all properties of a given element
 */
 domInterceptor.unpatchElementProperties = function(element, originalElement) {
-  domInterceptor._callListenerWithMessage = domInterceptor.NOOP;
+  domInterceptor.listener = domInterceptor._listener;
   domInterceptor.propertiesToPatch.forEach(function(prop) {
     Object.defineProperty(element, prop, {
       configurable: true,
@@ -296,7 +302,7 @@ domInterceptor.unpatchElementProperties = function(element, originalElement) {
       }
     });
   });
-  domInterceptor._callListenerWithMessage = domInterceptor.callListenerWithMessage;
+  domInterceptor.listener = domInterceptor._listener;
 };
 
 }((typeof module !== 'undefined' && module && module.exports) ?

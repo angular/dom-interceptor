@@ -39,10 +39,10 @@ describe('domInterceptor', function() {
           var testElement = document.createElement('div');
           testElement.setAttribute('id', 'test');
           document.body.appendChild(testElement);
-          var testProperty = 'innerHTML';
           domInterceptor.patchExistingElements();
-          testElement[testProperty] = 'new innerHTML value';
-          expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
+          testElement.innerHTML = 'new innerHTML value';
+          //Counts once for getting innerHTML, once for setting
+          expect(domInterceptor.callListenerWithMessage.callCount).toBe(2);
           domInterceptor.unpatchExistingElements();
       });
   });
@@ -55,7 +55,7 @@ describe('domInterceptor', function() {
       domInterceptor.patchElementProperties(element);
       expect(domInterceptor.callListenerWithMessage).not.toHaveBeenCalled();
       element.innerHTML = 'new innerHTML value';
-      expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
+      expect(domInterceptor.callListenerWithMessage.callCount).toBe(2);
       domInterceptor.unpatchElementProperties(element, copy);
     });
 
@@ -175,14 +175,18 @@ describe('domInterceptor', function() {
 
 
     it('should create a listener that conforms to the users default parameters', function() {
-
+      spyOn(domInterceptor, 'setListenerDefaults');
+      domInterceptor.addManipulationListener(true, true, true);
+      expect(domInterceptor.setListenerDefaults).toHaveBeenCalledWith(true, true, true);
+      domInterceptor.removeManipulationListener();
     });
 
 
     it('should detect getting element.innerHTML', function() {
-      var element = document.createElement('div');
+      var testElement = document.createElement('div');
       domInterceptor.addManipulationListener();
-      var inner = element['innerHTML'];
+      var inner = testElement.innerHTML;
+      //expect(domInterceptor.callListenerWithMessage.callCount).toBe(1);
       expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
       domInterceptor.removeManipulationListener();
     });
