@@ -67,7 +67,7 @@ domInterceptor.callListenerWithMessage = function(messageProperties) {
     debugger;
   }
   else {
-    console.log(message);
+    //console.log(message);
   }
 };
 
@@ -78,6 +78,27 @@ domInterceptor.callListenerWithMessage = function(messageProperties) {
 domInterceptor.message = 'Angular best practices are to manipulate the DOM in the view. ' +
 'Remove DOM manipulation from the controller. ' +
 'Warning because of manipulating property:';
+
+domInterceptor.givenMessages = {};
+domInterceptor.currentMessages = [];
+domInterceptor.createMessageTable = function(tableLine) {
+  if(!domInterceptor.givenMessages[tableLine]) {
+    currentMessages.push(tableLine);
+  }
+};
+
+setTimeout(function() {
+  if(domInterceptor.currentMessages.length > 2) {
+    console.log(domInterceptor.message);
+    console.table(currentMessages);
+  }
+  else if(domInterceptor.currentMessages.length > 1) {
+    console.log(domInterceptor.message);
+    console.log(currentMessages);
+  }
+
+  domInterceptor.currentMessages = [];
+}, 3000);
 
 /**
 * Object to preserve all the original properties
@@ -136,7 +157,7 @@ domInterceptor.patchOnePrototype = function(type) {
             if (typeof desc.value === 'function') {
               var originalValue = desc.value;
               desc.value = function () {
-                domInterceptor.listener({message: domInterceptor.message, property: prop});
+                domInterceptor.listener({message: '', property: prop});
                 return originalValue.apply(this, arguments);
               };
             }
@@ -162,7 +183,7 @@ domInterceptor.patchOnePrototype = function(type) {
           try {
             var original = type.prototype[prop];
             type.prototype[prop] = function () {
-              domInterceptor.listener({message: domInterceptor.message, property: prop});
+              domInterceptor.listener({message: '', property: prop});
               return original.apply(this, arguments);
             };
           }
@@ -215,11 +236,11 @@ domInterceptor.patchElementProperties = function(element) {
     Object.defineProperty(element, prop, {
       configurable: true,
       get: function() {
-        domInterceptor.listener({message: domInterceptor.message, property: prop});
+        domInterceptor.listener({message: '', property: prop});
         return real[prop];
       },
       set: function(newValue) {
-        domInterceptor.listener({message: domInterceptor.message, property: prop});
+        domInterceptor.listener({message: '', property: prop});
         real[prop] = element[prop];
       }
     });
