@@ -55,7 +55,7 @@ domInterceptor.callListenerWithMessage = function(messageProperties) {
     if (domInterceptor.includeLine) {
       var e = new Error();
       //Find the line in the user's program rather than in this service
-      var lineNum = e.stack.split('\n')[3];
+      var lineNum = e.stack.split('\n')[4];
       message += '\n' + lineNum;
     }
   }
