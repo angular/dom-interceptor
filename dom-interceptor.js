@@ -65,10 +65,10 @@ domInterceptor.callListenerWithMessage = function(messageProperties) {
 };
 
 /**
-* Default formatting of error to be thrown on DOM API manipulation from
+* Default formatting of message to be given on DOM API manipulation from
 * a controller.
 */
-domInterceptor.defaultError = 'Angular best practices are to manipulate the DOM in the view. ' +
+domInterceptor.message = 'Angular best practices are to manipulate the DOM in the view. ' +
 'Remove DOM manipulation from the controller. ' +
 'Warning because of manipulating property:';
 
@@ -113,7 +113,7 @@ domInterceptor.collectUnalteredPrototypeProperties = function(type, typeName) {
 * If no listener function is provided, the default listener is used.
 */
 domInterceptor.patchOnePrototype = function(type) {
-  //domInterceptor.listener = domInterceptor._listener;
+  domInterceptor.listener = domInterceptor._listener;
   if (!type || !type.prototype) {
     throw new Error('collectPrototypeProperties() needs a .prototype to collect properties from. ' +
       type + '.prototype is undefined.');
@@ -121,6 +121,7 @@ domInterceptor.patchOnePrototype = function(type) {
   var objectProperties = Object.getOwnPropertyNames(type.prototype);
   objectProperties.forEach(function(prop) {
     //Access of some prototype values may throw an error
+    try {
     var desc = Object.getOwnPropertyDescriptor(type.prototype, prop);
     if (desc) {
       if (desc.configurable) {
@@ -161,8 +162,10 @@ domInterceptor.patchOnePrototype = function(type) {
         catch (e) {}
       }
     }
+  }
+  catch(e){}
   });
-  //domInterceptor.listener = domInterceptor._listener;
+  domInterceptor.listener = domInterceptor._listener;
 };
 
 /**
