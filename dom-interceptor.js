@@ -19,14 +19,14 @@ domInterceptor.addManipulationListener = function(loudError, debugStatement, pro
   domInterceptor.collectUnalteredPrototypeProperties(Document, 'Document');
   domInterceptor.patchOnePrototype(Document);
   domInterceptor.patchExistingElements();
-  domInterceptor._callListenerWithMessage = domInterceptor.listener;
+  domInterceptor._callListenerWithMessage = domInterceptor.callListenerWithMessage;
 };
 
 /**
 * Set the listener function to a custom value
 * if the provided listener is not undefined and
 * is a function. If the parameter does not meet these
-* standards, leave domInterceptor.listener as the default error
+* standards, leave domInterceptor.callListenerWithMessage as the default error
 * throwing function.
 */
 domInterceptor.setListenerDefaults = function(loudError, debugBreak, propOnly) {
@@ -95,7 +95,7 @@ domInterceptor.collectUnalteredPrototypeProperties = function(type, typeName) {
     }
     catch(e) {}
   });
-  domInterceptor._callListenerWithMessage = domInterceptor.listener;
+  domInterceptor._callListenerWithMessage = domInterceptor.callListenerWithMessage;
   domInterceptor.originalProperties[typeName] = objectProperties;
   return objectProperties;
 };
@@ -156,7 +156,7 @@ domInterceptor.patchOnePrototype = function(type) {
       }
     }
   });
-  domInterceptor._callListenerWithMessage = domInterceptor.listener;
+  domInterceptor._callListenerWithMessage = domInterceptor.callListenerWithMessage;
 };
 
 /**
@@ -172,7 +172,7 @@ domInterceptor.patchExistingElements = function() {
     domInterceptor.save(elements[i], i);
     domInterceptor.patchElementProperties(elements[i]);
   }
-  domInterceptor._callListenerWithMessage = domInterceptor.listener;
+  domInterceptor._callListenerWithMessage = domInterceptor.callListenerWithMessage;
 };
 
 /**
@@ -208,7 +208,7 @@ domInterceptor.patchElementProperties = function(element) {
       }
     });
   });
-  domInterceptor._callListenerWithMessage = domInterceptor.listener;
+  domInterceptor._callListenerWithMessage = domInterceptor.callListenerWithMessage;
   return element;
 };
 
@@ -223,7 +223,7 @@ domInterceptor.save = function(element, index) {
     elementProperties[prop] = element[prop];
   });
   domInterceptor.savedElements[index] = elementProperties;
-  domInterceptor._callListenerWithMessage = domInterceptor.listener;
+  domInterceptor._callListenerWithMessage = domInterceptor.callListenerWithMessage;
 };
 
 /**
@@ -239,7 +239,7 @@ domInterceptor.removeManipulationListener = function() {
   domInterceptor.unpatchOnePrototype(EventTarget, 'EventTarget');
   domInterceptor.unpatchOnePrototype(Document, 'Document');
   domInterceptor.unpatchExistingElements();
-  domInterceptor._callListenerWithMessage = domInterceptor.listener;
+  domInterceptor._callListenerWithMessage = domInterceptor.callListenerWithMessage;
 };
 
 
@@ -264,7 +264,7 @@ domInterceptor.unpatchOnePrototype = function(type, typeName) {
     }
     catch(e) {}
   });
-  domInterceptor._callListenerWithMessage = domInterceptor.listener;
+  domInterceptor._callListenerWithMessage = domInterceptor.callListenerWithMessage;
 };
 
 /**
@@ -277,7 +277,7 @@ domInterceptor.unpatchExistingElements = function() {
     var originalElement = domInterceptor.savedElements[i];
     domInterceptor.unpatchElementProperties(elements[i], originalElement);
   }
-  domInterceptor._callListenerWithMessage = domInterceptor.listener;
+  domInterceptor._callListenerWithMessage = domInterceptor.callListenerWithMessage;
 };
 
 /**
@@ -296,7 +296,7 @@ domInterceptor.unpatchElementProperties = function(element, originalElement) {
       }
     });
   });
-  domInterceptor._callListenerWithMessage = domInterceptor.listener;
+  domInterceptor._callListenerWithMessage = domInterceptor.callListenerWithMessage;
 };
 
 }((typeof module !== 'undefined' && module && module.exports) ?
