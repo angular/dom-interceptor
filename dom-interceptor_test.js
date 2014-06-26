@@ -183,6 +183,7 @@ describe('domInterceptor', function() {
 
     it('should detect getting element.innerHTML', function() {
       var testElement = document.createElement('div');
+      document.body.appendChild(testElement);
       domInterceptor.addManipulationListener();
       var inner = testElement.innerHTML;
       //expect(domInterceptor.callListenerWithMessage.callCount).toBe(1);
@@ -193,6 +194,7 @@ describe('domInterceptor', function() {
 
     it('should detect setting element.innerHTML', function() {
       var element = document.createElement('div');
+      document.body.appendChild(element);
       domInterceptor.addManipulationListener();
       element.innerHTML = 'blank';
       expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
@@ -202,6 +204,7 @@ describe('domInterceptor', function() {
 
     it('should detect getting element.parentElement', function() {
       var element = document.createElement('div');
+      document.body.appendChild(element);
       domInterceptor.addManipulationListener();
       var parent = element.parentElement;
       expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();

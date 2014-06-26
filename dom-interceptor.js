@@ -10,6 +10,7 @@
 domInterceptor.addManipulationListener = function(loudError, debugStatement, propOnly, includeLine) {
   domInterceptor.listener = domInterceptor._listener;
   domInterceptor.setListenerDefaults(loudError, debugStatement, propOnly, includeLine);
+  domInterceptor.patchExistingElements();
   domInterceptor.collectUnalteredPrototypeProperties(Element, 'Element');
   domInterceptor.patchOnePrototype(Element);
   domInterceptor.collectUnalteredPrototypeProperties(Node, 'Node');
@@ -18,7 +19,6 @@ domInterceptor.addManipulationListener = function(loudError, debugStatement, pro
   domInterceptor.patchOnePrototype(EventTarget);
   domInterceptor.collectUnalteredPrototypeProperties(Document, 'Document');
   domInterceptor.patchOnePrototype(Document);
-  domInterceptor.patchExistingElements();
   domInterceptor.listener = domInterceptor.savedListener;
 };
 
@@ -38,7 +38,7 @@ domInterceptor.setListenerDefaults = function(loudError, debugBreak, propOnly, i
 
 domInterceptor._listener = domInterceptor.NOOP = function() {};
 
-domInterceptor.listener;
+domInterceptor.listener = domInterceptor.savedListener;
 
 domInterceptor.savedListener = function(messageProperties) {
   domInterceptor.callListenerWithMessage(messageProperties);
@@ -69,8 +69,6 @@ domInterceptor.callListenerWithMessage = function(messageProperties) {
   else {
     console.log(message);
   }
-
-
 };
 
 /**
@@ -164,7 +162,7 @@ domInterceptor.patchOnePrototype = function(type) {
           try {
             var original = type.prototype[prop];
             type.prototype[prop] = function () {
-              domInterceptor.callListenerWithMessage({message: domInterceptor.message, property: prop});
+              domInterceptor.listener({message: domInterceptor.message, property: prop});
               return original.apply(this, arguments);
             };
           }
@@ -174,7 +172,7 @@ domInterceptor.patchOnePrototype = function(type) {
     }
     catch(e){}
   });
-  domInterceptor.listener = domInterceptor._listener;
+  domInterceptor.listener = domInterceptor.savedListener;
 };
 
 /**
@@ -241,7 +239,7 @@ domInterceptor.save = function(element, index) {
     elementProperties[prop] = element[prop];
   });
   domInterceptor.savedElements[index] = elementProperties;
-  domInterceptor.listener = domInterceptor._listener;
+  domInterceptor.listener = domInterceptor.savedListener;
 };
 
 /**
@@ -257,7 +255,7 @@ domInterceptor.removeManipulationListener = function() {
   domInterceptor.unpatchOnePrototype(EventTarget, 'EventTarget');
   domInterceptor.unpatchOnePrototype(Document, 'Document');
   domInterceptor.unpatchExistingElements();
-  domInterceptor.listener = domInterceptor._listener;
+  domInterceptor.listener = domInterceptor.savedListener;
 };
 
 
@@ -282,7 +280,7 @@ domInterceptor.unpatchOnePrototype = function(type, typeName) {
     }
     catch(e) {}
   });
-  domInterceptor.listener = domInterceptor._listener;
+  domInterceptor.listener = domInterceptor.savedListener;
 };
 
 /**
@@ -295,7 +293,7 @@ domInterceptor.unpatchExistingElements = function() {
     var originalElement = domInterceptor.savedElements[i];
     domInterceptor.unpatchElementProperties(elements[i], originalElement);
   }
-  domInterceptor.listener = domInterceptor._listener;
+  domInterceptor.listener = domInterceptor.savedListener;
 };
 
 /**
@@ -314,7 +312,7 @@ domInterceptor.unpatchElementProperties = function(element, originalElement) {
       }
     });
   });
-  domInterceptor.listener = domInterceptor._listener;
+  domInterceptor.listener = domInterceptor.savedListener;
 };
 
 }((typeof module !== 'undefined' && module && module.exports) ?
