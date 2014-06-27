@@ -407,5 +407,17 @@ describe('domInterceptor', function() {
       expect(domInterceptor.callListenerWithMessage).not.toHaveBeenCalled();
     });
   });
+
+  describe('patchCreation()', function() {
+    it('should provide a proxy when elements are created', function() {
+      domInterceptor.patchCreation();
+      var test = document.createElement('div');
+      expect(function(){
+        document.body.appendChild(test);
+      }).not.toThrow();
+      test.innerHTML = 'new html';
+      expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
+    });
+  });
 });
 

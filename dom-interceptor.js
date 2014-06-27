@@ -362,6 +362,14 @@ domInterceptor.patchAccess = function() {
   });
 };
 
+domInterceptor.patchCreation = function() {
+  var originalCreate = Document.prototype['createElement'];
+  domInterceptor.unpatchedFunctions['createElement'] = Document.prototype['createElement'];
+  Document.prototype['createElement'] = function() {
+    return domInterceptor.getProxy(originalCreate.apply(this, arguments));
+  }
+}
+
 domInterceptor.getProxyList = function(elementList) {
   var elems = {};
   for(var i = 0; i < Object.keys(elementList).length - 1; i++) {
