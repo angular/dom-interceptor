@@ -56,7 +56,8 @@ domInterceptor.callListenerWithMessage = function(messageProperties) {
       var e = new Error();
       //Find the line in the user's program rather than in this service
       var lineNum = e.stack.split('\n')[4];
-      warning['line'] += lineNum;
+      lineNum = lineNum.split('<anonymous> ')[1];
+      warning['line'] = lineNum;
     }
     domInterceptor.createMessageTable(warning);
   }
