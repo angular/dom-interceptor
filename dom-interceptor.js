@@ -84,14 +84,14 @@ domInterceptor.givenMessages = {};
 domInterceptor.currentMessages = [];
 domInterceptor.createMessageTable = function(tableLine) {
   if(!domInterceptor.givenMessages[tableLine]) {
-    domInterceptor.currentMessages.push(tableLine, ['property', 'line']);
+    domInterceptor.currentMessages.push(tableLine);
   }
 };
 
 setTimeout(function() {
   if(domInterceptor.currentMessages.length > 2) {
     console.log(domInterceptor.message);
-    console.table(domInterceptor.currentMessages);
+    console.table(domInterceptor.currentMessages, ['property', 'line']);
   }
   else if(domInterceptor.currentMessages.length > 1) {
     console.log(domInterceptor.message);
