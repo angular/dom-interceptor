@@ -84,18 +84,18 @@ domInterceptor.givenMessages = {};
 domInterceptor.currentMessages = [];
 domInterceptor.createMessageTable = function(tableLine) {
   if(!domInterceptor.givenMessages[tableLine]) {
-    currentMessages.push(tableLine, ['property', 'line']);
+    domInterceptor.currentMessages.push(tableLine, ['property', 'line']);
   }
 };
 
 setTimeout(function() {
   if(domInterceptor.currentMessages.length > 2) {
     console.log(domInterceptor.message);
-    console.table(currentMessages);
+    console.table(domInterceptor.currentMessages);
   }
   else if(domInterceptor.currentMessages.length > 1) {
     console.log(domInterceptor.message);
-    console.log(currentMessages);
+    console.log(domInterceptor.currentMessages);
   }
 
   domInterceptor.currentMessages = [];
