@@ -344,87 +344,46 @@ domInterceptor.unpatchElementProperties = function(element, originalElement) {
   domInterceptor.listener = domInterceptor.savedListener;
 };
 
-domInterceptor.proxies = {};
-domInterceptor.giveProxy = function(element) {
-  domInterceptor.listener = domInterceptor._listener;
-  var proxy;
-  if(!domInterceptor.proxies[proxy]) {
-    proxy = element;
-    proxy.isProxy = true;
-    domInterceptor.propertiesToPatch.forEach(function(prop) {
-      var original = proxy;
-      Object.defineProperty(proxy, prop, {
-        configurable: true,
-        get: function() {
-          domInterceptor.listener({message: '', property: prop});
-          return original[prop];
-        },
-        set: function(newValue) {
-          domInterceptor.listener({message: '', property: prop});
-          proxy[prop] = newValue;
-        }
-      });
-    });
-    domInterceptor.proxies[proxy] = element;
-  }
-  else {
-    proxy = domInterceptor.proxies[proxy];
-  }
-  domInterceptor.listener = domInterceptor.savedListener;
-  return proxy;
-};
-
-domInterceptor.giveProxyList = function(elements) {
-  domInterceptor.listener = domInterceptor._listener;
-  var elementsProxied = [];
-  for(var i = 0; i < Object.keys(elements).length - 1; i++) {
-    var proxy;
-    if(!domInterceptor.proxies[proxy]) {
-      proxy = elements[i];
-      proxy.isProxy = true;
-      domInterceptor.propertiesToPatch.forEach(function(prop) {
-        var original = proxy;
-        Object.defineProperty(proxy, prop, {
-          configurable: true,
-          get: function() {
-            domInterceptor.listener({message: '', property: prop});
-            return original[prop];
-          },
-          set: function(newValue) {
-            domInterceptor.listener({message: '', property: prop});
-            proxy[prop] = newValue;
-          }
-        });
-      });
-      domInterceptor.proxies[proxy] = elements[i];
-    }
-    else {
-      proxy = domInterceptor.proxies[proxy];
-    }
-    elementsProxied.push(proxy);
-  }
-  domInterceptor.listener = domInterceptor.savedListener;
-  return elementsProxied;
-};
-
 domInterceptor.accessFunctions = ['getElementsByClassName', 'getElementsByName',
 'getElementsByTagName', 'getElementsByTagNameNS'];
 domInterceptor.unpatchedFunctions = {};
-
 domInterceptor.patchAccess = function() {
   var originalIndividual = Document.prototype['getElementById'];
   domInterceptor.unpatchedFunctions['getElementById'] = originalIndividual;
   Document.prototype['getElementById'] = function() {
-    return domInterceptor.giveProxy(originalIndividual.apply(this, arguments));
+    return domInterceptor.getProxy(originalIndividual.apply(this, arguments));
   }
-
   domInterceptor.accessFunctions.forEach(function(accessFunction) {
     var originalFunction = Document.prototype[accessFunction];
     domInterceptor.unpatchedFunctions[accessFunction] = originalFunction;
     Document.prototype[accessFunction] = function() {
-      return domInterceptor.giveProxyList(originalFunction.apply(this, arguments));
+      return domInterceptor.getProxyList(originalFunction.apply(this, arguments));
     }
   });
+};
+
+domInterceptor.getProxyList = function(elementList) {
+  var elems = {};
+  for(var i = 0; i < Object.keys(elementList).length - 1; i++) {
+    if(elementList[i]) {
+      elems[i] = domInterceptor.getProxy(elementList[i]);
+    }
+  }
+  return elems;
+};
+
+domInterceptor.getProxy = function(element) {
+  var proxyElement = new Proxy(element, {
+    get: function(target, name, receiver) {
+      domInterceptor.savedListener({message: '', property: name});
+      return Reflect.get(target, name, receiver);
+    },
+    set: function(target, name, value, receiver) {
+      domInterceptor.savedListener({message: '', property: name});
+      return Reflect.set(target, name, value, receiver);
+    }
+  });
+  return proxyElement;
 };
 
 domInterceptor.unPatchAccess = function() {

@@ -370,46 +370,41 @@ describe('domInterceptor', function() {
   });
 
   describe('patchAccessMethods()', function() {
-    it('should patch methods used to retrieve DOM objects', function() {
-      spyOn(domInterceptor, 'giveProxyList');
+    it('should patch methods used to retrieve DOM objects to return proxies', function() {
+      var test = document.createElement('div');
+      test.setAttribute('id', 'test');
+      document.body.appendChild(test);
       domInterceptor.patchAccess();
-      var elements = document.getElementsByTagName('*');
-      expect(domInterceptor.giveProxyList).toHaveBeenCalled();
+      test = document.getElementById('test');
+      test.innerHTML = 'new value';
+      //Proxies execute listener function
+      expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
+      domInterceptor.unPatchAccess();
     });
 
-    it('should patch methods used to retrieve DOM objects', function() {
-      domInterceptor.patchAccess();
-      var elements = document.getElementsByTagName('*');
-      expect(elements[0].isProxy).toBe(true);
-    });
 
-    it('should patch retrieving singular objects', function() {
-      var div = document.createElement('div');
-      div.setAttribute('id', 'test');
-      document.body.appendChild(div);
+    it('should patch methods used to retrieve lists of DOM objects', function() {
       domInterceptor.patchAccess();
-      var element = document.getElementById('test');
-      expect(element.isProxy).toBe(true);
+      var test2 = document.createElement('div');
+      document.body.appendChild(test2);
+      var elements = document.getElementsByTagName('div');
+      elements[0].innerHTML = 'new value';
+      expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
+      domInterceptor.unPatchAccess();
     });
   });
 
   describe('unPatchAccess()', function() {
     it('should unpatch methods used to retrieve DOM objects', function() {
-      spyOn(domInterceptor, 'giveProxy');
       domInterceptor.patchAccess();
       domInterceptor.unPatchAccess();
-      //document.getElementsByTagName('*');
-      expect(domInterceptor.giveProxy).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('giveProxy()', function() {
-    it('should return a patched proxy object on attempts to manipulate the DOM', function() {
-      var div = document.createElement('div');
-      div.setAttribute('id', 'test');
-      document.body.appendChild(div);
-      var proxy = domInterceptor.giveProxy(div);
-      expect(proxy.isProxy).toBe(true);
+      var test = document.createElement('div');
+      test.setAttribute('id', 'test');
+      document.body.appendChild(test);
+      test2 = document.getElementById('test');
+      test2.innerHTML = 'new value';
+      //Proxies execute listener function
+      expect(domInterceptor.callListenerWithMessage).not.toHaveBeenCalled();
     });
   });
 });
