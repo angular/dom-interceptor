@@ -49,27 +49,27 @@ domInterceptor.savedListener = function(messageProperties) {
 * May be overriden to throw custom error function if desired.
 */
 domInterceptor.callListenerWithMessage = function(messageProperties) {
-  var warning = {};
+  var message;
+  var lineNumber;
   if (!domInterceptor.propOnly) {
-    warning['property'] = messageProperties['property'];
+    message = messageProperties['property'];
     if (domInterceptor.includeLine) {
       var e = new Error();
       //Find the line in the user's program rather than in this service
       var lineNum = e.stack.split('\n')[4];
       lineNum = lineNum.split('<anonymous> ')[1];
-      warning['line'] = lineNum;
+      lineNumber = lineNum;
     }
-    domInterceptor.createMessageTable(warning);
   }
 
   if(domInterceptor.loudError) {
-    throw new Error(message);
+    throw new Error(message + ' ' + lineNumber);
   }
   else if(domInterceptor.debugBreak) {
     debugger;
   }
   else {
-    //console.log(message);
+    domInterceptor.createMessageTable(message, lineNumber);
   }
 };
 
@@ -77,29 +77,35 @@ domInterceptor.callListenerWithMessage = function(messageProperties) {
 * Default formatting of message to be given on DOM API manipulation from
 * a controller.
 */
-domInterceptor.message = 'Angular best practices are to manipulate the DOM in the view. ' +
-'Remove DOM manipulation from the controller. ' +
-'Warning because of manipulating property:';
+domInterceptor.message = 'Angular best practices are to manipulate the DOM in the view.' +
+' See: (https://github.com/angular/angular-hint-dom/blob/master/README.md) ' +
+'Expand to view manipulated properties and line numbers.';
 
 domInterceptor.givenMessages = {};
 domInterceptor.currentMessages = [];
-domInterceptor.createMessageTable = function(tableLine) {
-  if(!domInterceptor.givenMessages[tableLine]) {
-    domInterceptor.currentMessages.push(tableLine);
+domInterceptor.lines = [];
+domInterceptor.createMessageTable = function(warning, lineNumber) {
+  if(!domInterceptor.givenMessages[lineNumber]) {
+    domInterceptor.givenMessages[lineNumber] = lineNumber;
+    domInterceptor.currentMessages.push(warning);
+    domInterceptor.lines.push(lineNumber);
   }
 };
 
 setTimeout(function() {
   if(domInterceptor.currentMessages.length > 2) {
-    console.log(domInterceptor.message);
-    console.table(domInterceptor.currentMessages, ['property', 'line']);
+    console.group(domInterceptor.message);
+    for(var i = 0; i < domInterceptor.currentMessages.length; i++) {
+      console.log(domInterceptor.currentMessages[i] + ' ' + domInterceptor.lines[i]);
+    }
+    console.groupEnd();
   }
   else if(domInterceptor.currentMessages.length > 1) {
     console.log(domInterceptor.message);
     console.log(domInterceptor.currentMessages);
   }
-
   domInterceptor.currentMessages = [];
+  domInterceptor.lines = [];
 }, 3000);
 
 /**
