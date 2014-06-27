@@ -368,5 +368,49 @@ describe('domInterceptor', function() {
       expect(console.log).toHaveBeenCalledWith('A message: A property');
     });
   });
+
+  describe('patchAccessMethods()', function() {
+    it('should patch methods used to retrieve DOM objects', function() {
+      spyOn(domInterceptor, 'giveProxyList');
+      domInterceptor.patchAccess();
+      var elements = document.getElementsByTagName('*');
+      expect(domInterceptor.giveProxyList).toHaveBeenCalled();
+    });
+
+    it('should patch methods used to retrieve DOM objects', function() {
+      domInterceptor.patchAccess();
+      var elements = document.getElementsByTagName('*');
+      expect(elements[0].isProxy).toBe(true);
+    });
+
+    it('should patch retrieving singular objects', function() {
+      var div = document.createElement('div');
+      div.setAttribute('id', 'test');
+      document.body.appendChild(div);
+      domInterceptor.patchAccess();
+      var element = document.getElementById('test');
+      expect(element.isProxy).toBe(true);
+    });
+  });
+
+  describe('unPatchAccess()', function() {
+    it('should unpatch methods used to retrieve DOM objects', function() {
+      spyOn(domInterceptor, 'giveProxy');
+      domInterceptor.patchAccess();
+      domInterceptor.unPatchAccess();
+      //document.getElementsByTagName('*');
+      expect(domInterceptor.giveProxy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('giveProxy()', function() {
+    it('should return a patched proxy object on attempts to manipulate the DOM', function() {
+      var div = document.createElement('div');
+      div.setAttribute('id', 'test');
+      document.body.appendChild(div);
+      var proxy = domInterceptor.giveProxy(div);
+      expect(proxy.isProxy).toBe(true);
+    });
+  });
 });
 
