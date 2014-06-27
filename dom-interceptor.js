@@ -49,16 +49,16 @@ domInterceptor.savedListener = function(messageProperties) {
 * May be overriden to throw custom error function if desired.
 */
 domInterceptor.callListenerWithMessage = function(messageProperties) {
-  var message = messageProperties.property;
+  var warning = {};
   if (!domInterceptor.propOnly) {
-    message = messageProperties.message + ' ' + message;
+    warning['property'] = messageProperties['property'];
     if (domInterceptor.includeLine) {
       var e = new Error();
       //Find the line in the user's program rather than in this service
       var lineNum = e.stack.split('\n')[4];
-      message += '\n' + lineNum;
+      warning['line'] += lineNum;
     }
-    domInterceptor.createMessageTable(message);
+    domInterceptor.createMessageTable(warning);
   }
 
   if(domInterceptor.loudError) {
@@ -84,7 +84,7 @@ domInterceptor.givenMessages = {};
 domInterceptor.currentMessages = [];
 domInterceptor.createMessageTable = function(tableLine) {
   if(!domInterceptor.givenMessages[tableLine]) {
-    currentMessages.push(tableLine);
+    currentMessages.push(tableLine, ['property', 'line']);
   }
 };
 
