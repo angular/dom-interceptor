@@ -199,7 +199,9 @@ domInterceptor.patchOnePrototype = function(type) {
         }
       }
     }
-    catch(e){}
+    catch(e){
+      throw new Error(e);
+    }
   });
   domInterceptor.listener = domInterceptor.savedListener;
 };
