@@ -151,8 +151,7 @@ domInterceptor.collectUnalteredPrototypeProperties = function(type, typeName) {
 domInterceptor.patchOnePrototype = function(type) {
   domInterceptor.listener = domInterceptor._listener;
   if (!type || !type.prototype) {
-    throw new Error('collectPrototypeProperties() needs a .prototype to collect properties from. ' +
-      type + '.prototype is undefined.');
+    throw new Error('collectPrototypeProperties() needs a .prototype to collect properties from. ' + type + '.prototype is undefined.');
   }
   var objectProperties = Object.getOwnPropertyNames(type.prototype);
   objectProperties.forEach(function(prop) {
@@ -160,47 +159,45 @@ domInterceptor.patchOnePrototype = function(type) {
     var desc = undefined;
     try {
       desc = Object.getOwnPropertyDescriptor(type.prototype, prop);
-    catch(e){
-      //throw new Error(e);
     }
-      if (desc) {
-        if (desc.configurable) {
-          if (desc.value) {
-            if (typeof desc.value === 'function') {
-              var originalValue = desc.value;
-              desc.value = function () {
-                domInterceptor.listener({message: '', property: prop});
-                return originalValue.apply(this, arguments);
-              };
-            }
-          } else {
-            if (typeof desc.set === 'function') {
-              var originalSet = desc.set;
-              desc.set = function () {
-                domInterceptor.listener('set:' + prop);
-                return originalSet.apply(this, arguments);
-              };
-            }
-            if (typeof desc.get === 'function') {
-              var originalGet = desc.get;
-              desc.get = function () {
-                domInterceptor.listener('get:' + prop);
-                return originalGet.apply(this, arguments);
-              };
-            }
-          }
-
-          Object.defineProperty(type.prototype, prop, desc);
-        } else if (desc.writable) {
-          try {
-            var original = type.prototype[prop];
-            type.prototype[prop] = function () {
+    catch(e){}
+    if (desc) {
+      if (desc.configurable) {
+        if (desc.value) {
+          if (typeof desc.value === 'function') {
+            var originalValue = desc.value;
+            desc.value = function () {
               domInterceptor.listener({message: '', property: prop});
-              return original.apply(this, arguments);
+              return originalValue.apply(this, arguments);
             };
           }
-          catch (e) {}
+        } else {
+          if (typeof desc.set === 'function') {
+            var originalSet = desc.set;
+            desc.set = function () {
+              domInterceptor.listener('set:' + prop);
+              return originalSet.apply(this, arguments);
+            };
+          }
+          if (typeof desc.get === 'function') {
+            var originalGet = desc.get;
+            desc.get = function () {
+              domInterceptor.listener('get:' + prop);
+              return originalGet.apply(this, arguments);
+            };
+          }
         }
+
+        Object.defineProperty(type.prototype, prop, desc);
+      } else if (desc.writable) {
+        try {
+          var original = type.prototype[prop];
+          type.prototype[prop] = function () {
+            domInterceptor.listener({message: '', property: prop});
+            return original.apply(this, arguments);
+          };
+        }
+        catch (e) {}
       }
     }
   });
