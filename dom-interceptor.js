@@ -92,17 +92,36 @@ domInterceptor.createMessageTable = function(warning, lineNumber) {
   }
 };
 
+/**
+* Buffer console messages and release them at reasonable time intervals.
+* Use the console.group message to organize information where available.
+* Default to other console methods if the browser does not support console.group.
+*/
 setTimeout(function() {
-  if(domInterceptor.currentMessages.length > 2) {
-    console.group(domInterceptor.message);
+  if(console.group) {
+    if(domInterceptor.currentMessages.length > 2) {
+      console.group(domInterceptor.message);
+      for(var i = 0; i < domInterceptor.currentMessages.length; i++) {
+        console.log(domInterceptor.currentMessages[i] + ' ' + domInterceptor.lines[i]);
+      }
+      console.groupEnd();
+    }
+    else if(domInterceptor.currentMessages.length > 1) {
+      console.log(domInterceptor.message);
+      console.log(domInterceptor.currentMessages);
+    }
+  }
+  else if(console.warn) {
+    console.warn(domInterceptor.message);
+    for(var i = 0; i < domInterceptor.currentMessages.length; i++) {
+      console.warn(domInterceptor.currentMessages[i] + ' ' + domInterceptor.lines[i]);
+    }
+  }
+  else {
+    console.log(domInterceptor.message);
     for(var i = 0; i < domInterceptor.currentMessages.length; i++) {
       console.log(domInterceptor.currentMessages[i] + ' ' + domInterceptor.lines[i]);
     }
-    console.groupEnd();
-  }
-  else if(domInterceptor.currentMessages.length > 1) {
-    console.log(domInterceptor.message);
-    console.log(domInterceptor.currentMessages);
   }
   domInterceptor.currentMessages = [];
   domInterceptor.lines = [];
