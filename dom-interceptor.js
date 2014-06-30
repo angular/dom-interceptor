@@ -157,8 +157,12 @@ domInterceptor.patchOnePrototype = function(type) {
   var objectProperties = Object.getOwnPropertyNames(type.prototype);
   objectProperties.forEach(function(prop) {
     //Access of some prototype values may throw an error
+    var desc = undefined;
     try {
-      var desc = Object.getOwnPropertyDescriptor(type.prototype, prop);
+      desc = Object.getOwnPropertyDescriptor(type.prototype, prop);
+    catch(e){
+      //throw new Error(e);
+    }
       if (desc) {
         if (desc.configurable) {
           if (desc.value) {
@@ -198,9 +202,6 @@ domInterceptor.patchOnePrototype = function(type) {
           catch (e) {}
         }
       }
-    }
-    catch(e){
-      throw new Error(e);
     }
   });
   domInterceptor.listener = domInterceptor.savedListener;
