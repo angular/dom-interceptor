@@ -10,7 +10,6 @@
 domInterceptor.addManipulationListener = function(loudError, debugStatement, propOnly, includeLine) {
   domInterceptor.listener = domInterceptor._listener;
   domInterceptor.setListenerDefaults(loudError, debugStatement, propOnly, includeLine);
-  domInterceptor.patchExistingElements();
   domInterceptor.collectUnalteredPrototypeProperties(Element, 'Element');
   domInterceptor.patchOnePrototype(Element);
   domInterceptor.collectUnalteredPrototypeProperties(Node, 'Node');
@@ -206,7 +205,6 @@ domInterceptor.patchOnePrototype = function(type) {
             };
           }
         }
-
         Object.defineProperty(type.prototype, prop, desc);
       } else if (desc.writable) {
         try {
@@ -222,6 +220,60 @@ domInterceptor.patchOnePrototype = function(type) {
   });
   domInterceptor.listener = domInterceptor.savedListener;
 };
+
+/**
+* Controls the unpatching process by unpatching the
+* prototypes as well as disabling the patching of individual
+* HTML elements and returning those patched elements to their
+* original state.
+**/
+domInterceptor.removeManipulationListener = function() {
+  domInterceptor.listener = domInterceptor._listener;
+  domInterceptor.unpatchOnePrototype(Element, 'Element');
+  domInterceptor.unpatchOnePrototype(Node, 'Node');
+  domInterceptor.unpatchOnePrototype(EventTarget, 'EventTarget');
+  domInterceptor.unpatchOnePrototype(Document, 'Document');
+  domInterceptor.listener = domInterceptor.savedListener;
+};
+
+/**
+* Helper function to unpatch one prototype.
+* Sets all properties of the given type back to the
+* original values that were collected.
+**/
+domInterceptor.unpatchOnePrototype = function(type, typeName) {
+  domInterceptor.listener = domInterceptor._listener;
+  if(typeName == undefined) {
+    throw new Error('typeName must be the name used to save prototype properties. Got: ' + typeName);
+  }
+  var objectProperties = Object.getOwnPropertyNames(type.prototype);
+  objectProperties.forEach(function(prop) {
+    //Access of some prototype values may throw an error
+    try{
+    var alteredElement = type.prototype[prop];
+      if(typeof alteredElement === 'function') {
+        type.prototype[prop] = domInterceptor.originalProperties[typeName][prop];
+      }
+    }
+    catch(e) {}
+  });
+  domInterceptor.listener = domInterceptor.savedListener;
+};
+
+/**************************************************************************************************/
+/** EXTRA PATCHING METHODS NOT USED IN MAIN DOM-MANIPULATION DETECTOR **/
+
+/**
+* List of DOM API properties to patch on individual elements.
+* These are properties not covered by patching of the prototypes
+* and must therefore be patched on the elements themselves.
+**/
+domInterceptor.propertiesToPatch = ['innerHTML', 'parentElement'];
+
+/**
+* Object to hold original version of patched elements
+*/
+domInterceptor.savedElements = {};
 
 /**
 * While patching prototypes patches many of the DOM APIs,
@@ -240,19 +292,7 @@ domInterceptor.patchExistingElements = function() {
 };
 
 /**
-* List of DOM API properties to patch on individual elements.
-* These are properties not covered by patching of the prototypes
-* and must therefore be patched on the elements themselves.
-**/
-domInterceptor.propertiesToPatch = ['innerHTML', 'parentElement'];
-
-/**
-* Object to hold original version of patched elements
-*/
-domInterceptor.savedElements = {};
-
-/**
-* Helper function to patch specified properties of a given
+* Function to patch specified properties of a given
 * element to call the listener function on getting or setting
 **/
 domInterceptor.patchElementProperties = function(element) {
@@ -290,46 +330,6 @@ domInterceptor.save = function(element, index) {
   domInterceptor.listener = domInterceptor.savedListener;
 };
 
-/**
-* Controls the unpatching process by unpatching the
-* prototypes as well as disabling the patching of individual
-* HTML elements and returning those patched elements to their
-* original state.
-**/
-domInterceptor.removeManipulationListener = function() {
-  domInterceptor.listener = domInterceptor._listener;
-  domInterceptor.unpatchOnePrototype(Element, 'Element');
-  domInterceptor.unpatchOnePrototype(Node, 'Node');
-  domInterceptor.unpatchOnePrototype(EventTarget, 'EventTarget');
-  domInterceptor.unpatchOnePrototype(Document, 'Document');
-  domInterceptor.unpatchExistingElements();
-  domInterceptor.listener = domInterceptor.savedListener;
-};
-
-
-/**
-* Helper function to unpatch one prototype.
-* Sets all properties of the given type back to the
-* original values that were collected.
-**/
-domInterceptor.unpatchOnePrototype = function(type, typeName) {
-  domInterceptor.listener = domInterceptor._listener;
-  if(typeName == undefined) {
-    throw new Error('typeName must be the name used to save prototype properties. Got: ' + typeName);
-  }
-  var objectProperties = Object.getOwnPropertyNames(type.prototype);
-  objectProperties.forEach(function(prop) {
-    //Access of some prototype values may throw an error
-    try{
-    var alteredElement = type.prototype[prop];
-      if(typeof alteredElement === 'function') {
-        type.prototype[prop] = domInterceptor.originalProperties[typeName][prop];
-      }
-    }
-    catch(e) {}
-  });
-  domInterceptor.listener = domInterceptor.savedListener;
-};
 
 /**
 * Unpatches all the elements on the page that were patched.
