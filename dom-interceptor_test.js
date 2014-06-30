@@ -408,16 +408,19 @@ describe('domInterceptor', function() {
     });
   });
 
-  describe('patchCreation()', function() {
-    it('should provide a proxy when elements are created', function() {
-      domInterceptor.patchCreation();
-      var test = document.createElement('div');
-      expect(function(){
-        document.body.appendChild(test);
-      }).not.toThrow();
-      test.innerHTML = 'new html';
-      expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
-    });
-  });
+  // Creating a proxy at the same time as element creation returns null.
+  // The proxy strategy was found to be logistically unfeasible because of
+  // limited browser support before this test was made to pass.
+  // describe('patchCreation()', function() {
+  //   it('should provide a proxy when elements are created', function() {
+  //     domInterceptor.patchCreation();
+  //     var test = document.createElement('div');
+  //     expect(function(){
+  //       document.body.appendChild(test);
+  //     }).not.toThrow();
+  //     test.innerHTML = 'new html';
+  //     expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
+  //   });
+  // });
 });
 
