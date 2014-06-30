@@ -344,6 +344,14 @@ domInterceptor.unpatchElementProperties = function(element, originalElement) {
   domInterceptor.listener = domInterceptor.savedListener;
 };
 
+
+/**
+* Methods to patch DOM Access based on the harmony-reflect library and
+* the use of proxies. Currently proxies are considered experimental javascript.
+* In chrome, proxies can be enabled with the enable-javascript-harmony flag.
+* When support of proxies is more common, these functions could be used to patch
+* DOM elements on retrieval so that only the proxies are patched.
+*/
 domInterceptor.accessFunctions = ['getElementsByClassName', 'getElementsByName',
 'getElementsByTagName', 'getElementsByTagNameNS'];
 domInterceptor.unpatchedFunctions = {};
@@ -362,6 +370,10 @@ domInterceptor.patchAccess = function() {
   });
 };
 
+/**
+* Attempts to create a proxy element in place of a created element when the method
+* is called. Currently causes the proxy to be null.
+*/
 domInterceptor.patchCreation = function() {
   var originalCreate = Document.prototype['createElement'];
   domInterceptor.unpatchedFunctions['createElement'] = Document.prototype['createElement'];
@@ -370,6 +382,10 @@ domInterceptor.patchCreation = function() {
   }
 }
 
+/**
+* Helper method to get a list of proxies for methods that access
+* lists of DOM elements such as getElementsByTagName()
+*/
 domInterceptor.getProxyList = function(elementList) {
   var elems = {};
   for(var i = 0; i < Object.keys(elementList).length - 1; i++) {
@@ -380,6 +396,12 @@ domInterceptor.getProxyList = function(elementList) {
   return elems;
 };
 
+/**
+* Creates a proxy element that is accessed instead of a given DOM element.
+* This proxy is patched to call the desired listener function.
+* Hence, the proxy has the functionality necessary to detect DOM manipulation,
+* but the original element is still fully functional.
+*/
 domInterceptor.getProxy = function(element) {
   var proxyElement = new Proxy(element, {
     get: function(target, name, receiver) {
@@ -394,6 +416,9 @@ domInterceptor.getProxy = function(element) {
   return proxyElement;
 };
 
+/**
+* Removes proxies of elements.
+*/
 domInterceptor.unPatchAccess = function() {
   Document.prototype['getElementById'] = domInterceptor.unpatchedFunctions['getElementById'];
   domInterceptor.accessFunctions.forEach(function(accessFunction) {
