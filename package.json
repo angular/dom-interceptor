@@ -4,7 +4,7 @@
   "description": "patch DOM APIs to intercept calls to them",
   "main": "dom-interceptor.js",
   "scripts": {
-    "test": "./node_modules/karma/bin/karma start --browsers Firefox --single-run"
+    "test": "karma start karma.conf.js"
   },
   "repository": {
     "type": "git",
@@ -25,6 +25,8 @@
   "homepage": "https://github.com/angular/dom-interceptor",
   "devDependencies": {
     "karma": "0.12.16",
+    "karma-sauce-launcher": "^0.2.9",
+    "karma-jasmine": "0.1.5",
     "karma-chrome-launcher": "^0.1.4",
     "karma-coverage": "~0.1.4",
     "karma-firefox-launcher": "~0.1.3",
@@ -36,6 +38,8 @@
     "gulp": "^3.8.6",
     "karma-bro": "^0.6.0",
     "karma-firefox-launcher": "^0.1.3",
+    "karma-safari-launcher": "^0.1.1",
     "watchify": "^0.10.2"
   }
 }
+
