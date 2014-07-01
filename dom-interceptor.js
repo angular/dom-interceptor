@@ -178,7 +178,9 @@ domInterceptor.patchOnePrototype = function(type) {
     try {
       desc = Object.getOwnPropertyDescriptor(type.prototype, prop);
     }
-    catch(e){}
+    catch(e){
+      console.log(type.prototype + ' ' + prop);
+    }
     if (desc) {
       if (desc.configurable) {
         if (desc.value) {

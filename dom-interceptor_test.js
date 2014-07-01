@@ -1,16 +1,21 @@
 describe('domInterceptor', function() {
   var prototypeNotAvailable;
+  try {
+    var objectProperties = Object.getOwnPropertyNames(Element.prototype);
+    objectProperties.forEach(function(prop) {
+      Object.getOwnPropertyDescriptor(Element.prototype, prop);
+    });
+  }
+  catch(e) {
+    console.log(e);
+    prototypeNotAvailable = true;
+  }
+
   beforeEach(function() {
     domInterceptor.callListenerWithMessage = jasmine.createSpy('callListenerWithMessage');
-    try {
-      desc = Object.getOwnPropertyDescriptor(EventTarget.prototype, EventTarget.prototype.addEventListener);
-      desc = Object.getOwnPropertyDescriptor(Node.prototype, Node.prototype.insertBefore);
-      desc = Object.getOwnPropertyDescriptor(Node.prototype, Node.prototype.appendChild);
-    }
-    catch(e) {
-      prototypeNotAvailable = true;
-    }
   });
+
+  Object.getOwnPropertyDescriptor(EventTarget.prototype, EventTarget.prototype.addEventListener);
 
   describe('collectUnalteredPrototypeProperties()', function() {
     it('should collect the unpatched properties of prototypes', function() {
