@@ -7,7 +7,7 @@ describe('domInterceptor', function() {
       desc = Object.getOwnPropertyDescriptor(Node.prototype, Node.prototype.insertBefore);
       desc = Object.getOwnPropertyDescriptor(Node.prototype, Node.prototype.appendChild);
     }
-    catch(e){
+    catch(e) {
       prototypeNotAvailable = true;
     }
   });
@@ -386,44 +386,45 @@ describe('domInterceptor', function() {
     });
   });
 
-  describe('patchAccessMethods()', function() {
-    it('should patch methods used to retrieve DOM objects to return proxies', function() {
-      var test = document.createElement('div');
-      test.setAttribute('id', 'test');
-      document.body.appendChild(test);
-      domInterceptor.patchAccess();
-      test = document.getElementById('test');
-      test.innerHTML = 'new value';
-      //Proxies execute listener function
-      expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
-      domInterceptor.unPatchAccess();
-    });
+  // Tests that require the harmony-reflect library and implementations of proxies
+  // describe('patchAccessMethods()', function() {
+  //   it('should patch methods used to retrieve DOM objects to return proxies', function() {
+  //     var test = document.createElement('div');
+  //     test.setAttribute('id', 'test');
+  //     document.body.appendChild(test);
+  //     domInterceptor.patchAccess();
+  //     test = document.getElementById('test');
+  //     test.innerHTML = 'new value';
+  //     //Proxies execute listener function
+  //     expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
+  //     domInterceptor.unPatchAccess();
+  //   });
 
 
-    it('should patch methods used to retrieve lists of DOM objects', function() {
-      domInterceptor.patchAccess();
-      var test2 = document.createElement('div');
-      document.body.appendChild(test2);
-      var elements = document.getElementsByTagName('div');
-      elements[0].innerHTML = 'new value';
-      expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
-      domInterceptor.unPatchAccess();
-    });
-  });
+  //   it('should patch methods used to retrieve lists of DOM objects', function() {
+  //     domInterceptor.patchAccess();
+  //     var test2 = document.createElement('div');
+  //     document.body.appendChild(test2);
+  //     var elements = document.getElementsByTagName('div');
+  //     elements[0].innerHTML = 'new value';
+  //     expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
+  //     domInterceptor.unPatchAccess();
+  //   });
+  // });
 
-  describe('unPatchAccess()', function() {
-    it('should unpatch methods used to retrieve DOM objects', function() {
-      domInterceptor.patchAccess();
-      domInterceptor.unPatchAccess();
-      var test = document.createElement('div');
-      test.setAttribute('id', 'test');
-      document.body.appendChild(test);
-      test2 = document.getElementById('test');
-      test2.innerHTML = 'new value';
-      //Proxies execute listener function
-      expect(domInterceptor.callListenerWithMessage).not.toHaveBeenCalled();
-    });
-  });
+  // describe('unPatchAccess()', function() {
+  //   it('should unpatch methods used to retrieve DOM objects', function() {
+  //     domInterceptor.patchAccess();
+  //     domInterceptor.unPatchAccess();
+  //     var test = document.createElement('div');
+  //     test.setAttribute('id', 'test');
+  //     document.body.appendChild(test);
+  //     test2 = document.getElementById('test');
+  //     test2.innerHTML = 'new value';
+  //     //Proxies execute listener function
+  //     expect(domInterceptor.callListenerWithMessage).not.toHaveBeenCalled();
+  //   });
+  // });
 
   // Creating a proxy at the same time as element creation returns null.
   // The proxy strategy was found to be logistically unfeasible because of
