@@ -1,6 +1,15 @@
 describe('domInterceptor', function() {
+  var prototypeNotAvailable;
   beforeEach(function() {
     domInterceptor.callListenerWithMessage = jasmine.createSpy('callListenerWithMessage');
+    try {
+      desc = Object.getOwnPropertyDescriptor(EventTarget.prototype, EventTarget.prototype.addEventListener);
+      desc = Object.getOwnPropertyDescriptor(Node.prototype, Node.prototype.insertBefore);
+      desc = Object.getOwnPropertyDescriptor(Node.prototype, Node.prototype.appendChild);
+    }
+    catch(e){
+      prototypeNotAvailable = true;
+    }
   });
 
   describe('collectUnalteredPrototypeProperties()', function() {
@@ -214,14 +223,17 @@ describe('domInterceptor', function() {
     // });
 
 
-    it('should detect calling element.addEventListener', function() {
-      domInterceptor.addManipulationListener();
-      var element = document.createElement('div');
-      var parent = element.addEventListener('click', function(e){});
-      expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
-      domInterceptor.removeManipulationListener();
-    });
-
+    //Will only be patched if EventTarget.prototype can be patched
+    //Test not run if prototype cannot be patched
+    if(!prototypeNotAvailable) {
+      it('should detect calling element.addEventListener', function() {
+        domInterceptor.addManipulationListener();
+        var element = document.createElement('div');
+        var parent = element.addEventListener('click', function(e){});
+        expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
+        domInterceptor.removeManipulationListener();
+      });
+    }
 
     it('should detect calling element.remove', function() {
       domInterceptor.addManipulationListener();
@@ -231,27 +243,30 @@ describe('domInterceptor', function() {
       domInterceptor.removeManipulationListener();
     });
 
+    //Will only be patched if Node.prototype can be patched
+    //Test not run if prototype cannot be patched
+    if(!prototypeNotAvailable) {
+      it('should detect calling element.insertBefore', function() {
+        var parentElement = document.createElement('div');
+        var referenceElement = document.createElement('div');
+        parentElement.appendChild(referenceElement);
+        domInterceptor.addManipulationListener();
+        var newElement = document.createElement('div');
+        parentElement.insertBefore(newElement, referenceElement);
+        expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
+        domInterceptor.removeManipulationListener();
+      });
 
-    it('should detect calling element.insertBefore', function() {
-      var parentElement = document.createElement('div');
-      var referenceElement = document.createElement('div');
-      parentElement.appendChild(referenceElement);
-      domInterceptor.addManipulationListener();
-      var newElement = document.createElement('div');
-      parentElement.insertBefore(newElement, referenceElement);
-      expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
-      domInterceptor.removeManipulationListener();
-    });
 
-
-    it('should detect calling element.appendChild', function() {
-      var parentElement = document.createElement('div');
-      var childElement = document.createElement('div');
-      domInterceptor.addManipulationListener();
-      parentElement.appendChild(childElement);
-      expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
-      domInterceptor.removeManipulationListener();
-    });
+      it('should detect calling element.appendChild', function() {
+        var parentElement = document.createElement('div');
+        var childElement = document.createElement('div');
+        domInterceptor.addManipulationListener();
+        parentElement.appendChild(childElement);
+        expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
+        domInterceptor.removeManipulationListener();
+      });
+    }
   });
 
   describe('unpatchOnePrototype()', function() {
