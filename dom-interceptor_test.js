@@ -1,5 +1,7 @@
 describe('domInterceptor', function() {
   var prototypeNotAvailable;
+  var noRemove;
+
   try {
     var objectProperties = Object.getOwnPropertyNames(Element.prototype);
     objectProperties.forEach(function(prop) {
@@ -7,8 +9,12 @@ describe('domInterceptor', function() {
     });
   }
   catch(e) {
-    console.log(e);
     prototypeNotAvailable = true;
+  }
+
+  var oneElem = document.createElement('div');
+  if(typeof oneElem.remove != 'function') {
+    noRemove = true;
   }
 
   beforeEach(function() {
@@ -227,13 +233,15 @@ describe('domInterceptor', function() {
     //   domInterceptor.removeManipulationListener();
     // });
 
-    it('should detect calling element.remove', function() {
-      domInterceptor.addManipulationListener();
-      var element = document.createElement('div');
-      element.remove();
-      expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
-      domInterceptor.removeManipulationListener();
-    });
+    if(!noRemove) {
+      it('should detect calling element.remove', function() {
+        domInterceptor.addManipulationListener();
+        var element = document.createElement('div');
+        element.remove();
+        expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
+        domInterceptor.removeManipulationListener();
+      });
+    }
 
     //Will only be patched if Node.prototype and EventTarget.prototype can be patched
     //Test not run if prototype cannot be patched
