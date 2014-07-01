@@ -222,8 +222,15 @@ describe('domInterceptor', function() {
     //   domInterceptor.removeManipulationListener();
     // });
 
+    it('should detect calling element.remove', function() {
+      domInterceptor.addManipulationListener();
+      var element = document.createElement('div');
+      element.remove();
+      expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
+      domInterceptor.removeManipulationListener();
+    });
 
-    //Will only be patched if EventTarget.prototype can be patched
+    //Will only be patched if Node.prototype and EventTarget.prototype can be patched
     //Test not run if prototype cannot be patched
     if(!prototypeNotAvailable) {
       it('should detect calling element.addEventListener', function() {
@@ -233,19 +240,8 @@ describe('domInterceptor', function() {
         expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
         domInterceptor.removeManipulationListener();
       });
-    }
 
-    it('should detect calling element.remove', function() {
-      domInterceptor.addManipulationListener();
-      var element = document.createElement('div');
-      element.remove();
-      expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
-      domInterceptor.removeManipulationListener();
-    });
 
-    //Will only be patched if Node.prototype can be patched
-    //Test not run if prototype cannot be patched
-    if(!prototypeNotAvailable) {
       it('should detect calling element.insertBefore', function() {
         var parentElement = document.createElement('div');
         var referenceElement = document.createElement('div');
