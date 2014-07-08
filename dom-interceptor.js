@@ -446,4 +446,4 @@ domInterceptor.unpatchElementProperties = function(element, originalElement) {
 // };
 
 }((typeof module !== 'undefined' && module && module.exports) ?
-      module.exports : (window.domInterceptor = {}) ));
+      (module.exports = window.domInterceptor = {}) : (window.domInterceptor = {}) ));
