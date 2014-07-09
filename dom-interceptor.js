@@ -98,16 +98,16 @@ domInterceptor.createMessageTable = function(warning, lineNumber) {
 */
 setTimeout(function() {
   if(console.group) {
-    if(domInterceptor.currentMessages.length > 2) {
+    if(domInterceptor.currentMessages.length > 1) {
       console.group(domInterceptor.message);
       for(var i = 0; i < domInterceptor.currentMessages.length; i++) {
         console.log(domInterceptor.currentMessages[i] + ' ' + domInterceptor.lines[i]);
       }
       console.groupEnd();
     }
-    else if(domInterceptor.currentMessages.length > 1) {
+    else if(domInterceptor.currentMessages.length > 0) {
       console.log(domInterceptor.message);
-      console.log(domInterceptor.currentMessages);
+      console.log(domInterceptor.currentMessages[0]);
     }
   }
   else if(console.warn) {
