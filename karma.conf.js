@@ -1,12 +1,14 @@
 module.exports = function(config) {
   config.set({
-    frameworks: ['jasmine'],
+    frameworks: ['browserify','jasmine'],
     files: [
       'dom-interceptor.js',
       'dom-interceptor_test.js'
     ],
     exclude: [],
-    preprocessors: {},
+    preprocessors: {
+      'dom-interceptor.js': ['browserify']
+    },
     browsers: ['Chrome'],
   });
 };
