@@ -31,6 +31,7 @@
     "karma-jasmine": "0.1.5"
   },
   "dependencies": {
+    "angular-hint-log": "git://github.com/angular/angular-hint-log",
     "browserify": "^4.2.0",
     "gulp": "^3.8.6",
     "karma-bro": "^0.6.0",

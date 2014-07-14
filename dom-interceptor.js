@@ -1,7 +1,7 @@
 (function (domInterceptor) {
-
 'use strict';
 
+var hintLog = require('angular-hint-log');
 /**
 * Controls the patching process by patching all necessary
 * prototypes as well as triggering the patching of individual
@@ -29,102 +29,30 @@ domInterceptor.addManipulationListener = function(loudError, debugStatement, pro
 * throwing function.
 */
 domInterceptor.setListenerDefaults = function(loudError, debugBreak, propOnly, includeLine) {
-  loudError ? domInterceptor.loudError = true : domInterceptor.loudError = false;
-  debugBreak ? domInterceptor.debugBreak = true : domInterceptor.debugBreak = false;
-  propOnly ? domInterceptor.propOnly = true : domInterceptor.propOnly = false;
-  includeLine ? domInterceptor.includeLine = true : domInterceptor.includeLine = false;
+  hintLog.moduleName = 'DOM';
+  hintLog.moduleDescription = 'Angular best practices are to manipulate the DOM in the view.' +
+    ' See: (https://github.com/angular/angular-hint-dom/blob/master/README.md) ';
+  loudError != undefined ? hintLog.setLogDefault('throwError', loudError) : domInterceptor.NOOP;
+  debugBreak != undefined ? hintLog.setLogDefault('debuggerBreakpoint', debugBreak) : domInterceptor.NOOP;
+  propOnly != undefined ? hintLog.setLogDefault('propertyOnly', propOnly) : domInterceptor.NOOP;
+  includeLine != undefined ? hintLog.setLogDefault('includeLine', includeLine) : domInterceptor.NOOP;
 };
 
 domInterceptor._listener = domInterceptor.NOOP = function() {};
 
 domInterceptor.listener = domInterceptor.savedListener;
 
-domInterceptor.savedListener = function(messageProperties) {
-  domInterceptor.callListenerWithMessage(messageProperties);
+domInterceptor.savedListener = function(message) {
+  domInterceptor.callListenerWithMessage(message);
 };
 
 /**
 * Error function thrown on detection of DOM manipulation.
 * May be overriden to throw custom error function if desired.
 */
-domInterceptor.callListenerWithMessage = function(messageProperties) {
-  var message;
-  var lineNumber;
-  if (!domInterceptor.propOnly) {
-    message = messageProperties['property'];
-    if (domInterceptor.includeLine) {
-      var e = new Error();
-      //Find the line in the user's program rather than in this service
-      var lineNum = e.stack.split('\n')[4];
-      lineNum = lineNum.split('<anonymous> ')[1];
-      lineNumber = lineNum;
-    }
-  }
-
-  if(domInterceptor.loudError) {
-    throw new Error(message + ' ' + lineNumber);
-  }
-  else if(domInterceptor.debugBreak) {
-    debugger;
-  }
-  else {
-    domInterceptor.createMessageTable(message, lineNumber);
-  }
+domInterceptor.callListenerWithMessage = function(message) {
+  hintLog.foundError(message);
 };
-
-/**
-* Default formatting of message to be given on DOM API manipulation from
-* a controller.
-*/
-domInterceptor.message = 'Angular best practices are to manipulate the DOM in the view.' +
-' See: (https://github.com/angular/angular-hint-dom/blob/master/README.md) ' +
-'Expand to view manipulated properties and line numbers.';
-
-domInterceptor.givenMessages = {};
-domInterceptor.currentMessages = [];
-domInterceptor.lines = [];
-domInterceptor.createMessageTable = function(warning, lineNumber) {
-  if(!domInterceptor.givenMessages[lineNumber]) {
-    domInterceptor.givenMessages[lineNumber] = lineNumber;
-    domInterceptor.currentMessages.push(warning);
-    domInterceptor.lines.push(lineNumber);
-  }
-};
-
-/**
-* Buffer console messages and release them at reasonable time intervals.
-* Use the console.group message to organize information where available.
-* Default to other console methods if the browser does not support console.group.
-*/
-setTimeout(function() {
-  if(console.group) {
-    if(domInterceptor.currentMessages.length > 1) {
-      console.group(domInterceptor.message);
-      for(var i = 0; i < domInterceptor.currentMessages.length; i++) {
-        console.log(domInterceptor.currentMessages[i] + ' ' + domInterceptor.lines[i]);
-      }
-      console.groupEnd();
-    }
-    else if(domInterceptor.currentMessages.length > 0) {
-      console.log(domInterceptor.message);
-      console.log(domInterceptor.currentMessages[0]);
-    }
-  }
-  else if(console.warn) {
-    console.warn(domInterceptor.message);
-    for(var i = 0; i < domInterceptor.currentMessages.length; i++) {
-      console.warn(domInterceptor.currentMessages[i] + ' ' + domInterceptor.lines[i]);
-    }
-  }
-  else {
-    console.log(domInterceptor.message);
-    for(var i = 0; i < domInterceptor.currentMessages.length; i++) {
-      console.log(domInterceptor.currentMessages[i] + ' ' + domInterceptor.lines[i]);
-    }
-  }
-  domInterceptor.currentMessages = [];
-  domInterceptor.lines = [];
-}, 3000);
 
 /**
 * Object to preserve all the original properties
@@ -185,7 +113,7 @@ domInterceptor.patchOnePrototype = function(type) {
           if (typeof desc.value === 'function') {
             var originalValue = desc.value;
             desc.value = function () {
-              domInterceptor.listener({message: '', property: prop});
+              domInterceptor.listener(prop);
               return originalValue.apply(this, arguments);
             };
           }
@@ -210,7 +138,7 @@ domInterceptor.patchOnePrototype = function(type) {
         try {
           var original = type.prototype[prop];
           type.prototype[prop] = function () {
-            domInterceptor.listener({message: '', property: prop});
+            domInterceptor.listener(prop);
             return original.apply(this, arguments);
           };
         }
@@ -303,11 +231,11 @@ domInterceptor.patchElementProperties = function(element) {
     Object.defineProperty(element, prop, {
       configurable: true,
       get: function() {
-        domInterceptor.listener({message: '', property: prop});
+        domInterceptor.listener(prop);
         return real[prop];
       },
       set: function(newValue) {
-        domInterceptor.listener({message: '', property: prop});
+        domInterceptor.listener(prop);
         real[prop] = element[prop];
       }
     });
@@ -424,11 +352,11 @@ domInterceptor.unpatchElementProperties = function(element, originalElement) {
 // domInterceptor.getProxy = function(element) {
 //   var proxyElement = new Proxy(element, {
 //     get: function(target, name, receiver) {
-//       domInterceptor.savedListener({message: '', property: name});
+//       domInterceptor.savedListener(name);
 //       return Reflect.get(target, name, receiver);
 //     },
 //     set: function(target, name, value, receiver) {
-//       domInterceptor.savedListener({message: '', property: name});
+//       domInterceptor.savedListener(name);
 //       return Reflect.set(target, name, value, receiver);
 //     }
 //   });

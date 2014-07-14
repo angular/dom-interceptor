@@ -347,21 +347,8 @@ describe('domInterceptor', function() {
 
   describe('listener properties', function() {
     beforeEach(function() {
-      domInterceptor.callListenerWithMessage = function(messageProperties) {
-        var message = messageProperties.property;
-        if(!domInterceptor.propOnly) {
-          message = messageProperties.message + ' ' + message;
-        }
-
-        if(domInterceptor.loudError) {
-          throw new Error(message);
-        }
-        else if(domInterceptor.debugBreak) {
-          debugger;
-        }
-        else {
-          console.log(message);
-        }
+      domInterceptor.callListenerWithMessage = function(message) {
+        hintLog.foundError(message);
       };
     });
 
@@ -375,24 +362,9 @@ describe('domInterceptor', function() {
 
     it('should pause the debugger if the debugBreak parameter is set', function() {
       domInterceptor.setListenerDefaults(false, true, false, true);
-      expect(domInterceptor.debugBreak).toEqual(true);
+      expect(hintLog.debugBreak).toEqual(true);
     });
 
-
-    it('should only log the property if the propOnly parameter is set', function() {
-      domInterceptor.setListenerDefaults(false, false, true, true);
-      console.log = jasmine.createSpy('log');
-      domInterceptor.callListenerWithMessage({message: 'A message:', property: 'A property'});
-      expect(console.log).toHaveBeenCalledWith('A property');
-    });
-
-
-    it('should log a message to the console as the default', function() {
-      domInterceptor.setListenerDefaults(false, false, false);
-      console.log = jasmine.createSpy('log');
-      domInterceptor.callListenerWithMessage({message: 'A message:', property: 'A property'});
-      expect(console.log).toHaveBeenCalledWith('A message: A property');
-    });
   });
 
   // Tests that require the harmony-reflect library and implementations of proxies
