@@ -365,6 +365,12 @@ describe('domInterceptor', function() {
       expect(hintLog.debugBreak).toEqual(true);
     });
 
+    it('should print a helpful line number', function() {
+      domInterceptor.setListenerDefaults(false, false, false, true);
+      domInterceptor.callListenerWithMessage('An error was created');
+      expect(hintLog.printAvailableMessages)
+
+    });
   });
 
   // Tests that require the harmony-reflect library and implementations of proxies

@@ -31,7 +31,9 @@ domInterceptor.addManipulationListener = function(loudError, debugStatement, pro
 domInterceptor.setListenerDefaults = function(loudError, debugBreak, propOnly, includeLine) {
   hintLog.moduleName = 'DOM';
   hintLog.moduleDescription = 'Angular best practices are to manipulate the DOM in the view.' +
-    ' See: (https://github.com/angular/angular-hint-dom/blob/master/README.md) ';
+    ' See: (https://github.com/angular/angular-hint-dom/blob/master/README.md). ' +
+    'The following functions manipulate the DOM.';
+  hintLog.lineNumber = 6;
   loudError != undefined ? hintLog.setLogDefault('throwError', loudError) : domInterceptor.NOOP;
   debugBreak != undefined ? hintLog.setLogDefault('debuggerBreakpoint', debugBreak) : domInterceptor.NOOP;
   propOnly != undefined ? hintLog.setLogDefault('propertyOnly', propOnly) : domInterceptor.NOOP;
