@@ -1,11 +1,13 @@
 (function (domInterceptor) {
 'use strict';
 
-var hintLog = require('angular-hint-log');
+
 /**
+* Initializes the listener by setting defaults. These defaults are
+* used by the HintLog module to decide how the user should be notified of errors.
 * Controls the patching process by patching all necessary
-* prototypes as well as triggering the patching of individual
-* HTML elements.
+* prototypes. The unpatched state of the prototype is saved so that
+* it can be safely reverted later.
 **/
 domInterceptor.addManipulationListener = function(loudError, debugStatement, propOnly, includeLine) {
   domInterceptor.listener = domInterceptor._listener;
@@ -21,38 +23,39 @@ domInterceptor.addManipulationListener = function(loudError, debugStatement, pro
   domInterceptor.listener = domInterceptor.savedListener;
 };
 
+//Use the HintLog module to provide warnings consistent with other AngularHint Modules
+//Once hintLog is initialized, it will be configured with the listener defaults
+var hintLog = require('angular-hint-log');
+
 /**
-* Set the listener function to a custom value
-* if the provided listener is not undefined and
-* is a function. If the parameter does not meet these
-* standards, leave domInterceptor.callListenerWithMessage as the default error
-* throwing function.
+* Set defaults for the 'listener' that listens for infringements of DOM best practices.
+* When the 'listener' is activated, it will inform the user of the error. The listener
+* uses the HintLog module to provide the user with errors in a format that is consistent
+* with other AngularHint modules.
 */
 domInterceptor.setListenerDefaults = function(loudError, debugBreak, propOnly, includeLine) {
+  //Set details of the messages that HintLog will provide
   hintLog.moduleName = 'DOM';
   hintLog.moduleDescription = 'Angular best practices are to manipulate the DOM in the view.' +
     ' See: (https://github.com/angular/angular-hint-dom/blob/master/README.md). ' +
     'The following functions manipulate the DOM.';
-  hintLog.lineNumber = 6;
-  loudError != undefined ? hintLog.setLogDefault('throwError', loudError) : domInterceptor.NOOP;
-  debugBreak != undefined ? hintLog.setLogDefault('debuggerBreakpoint', debugBreak) : domInterceptor.NOOP;
-  propOnly != undefined ? hintLog.setLogDefault('propertyOnly', propOnly) : domInterceptor.NOOP;
-  includeLine != undefined ? hintLog.setLogDefault('includeLine', includeLine) : domInterceptor.NOOP;
-};
-
-domInterceptor._listener = domInterceptor.NOOP = function() {};
-
-domInterceptor.listener = domInterceptor.savedListener;
-
-domInterceptor.savedListener = function(message) {
-  domInterceptor.callListenerWithMessage(message);
+  //The line of the user's own error appears in line 5 of the stacktrace found by HintLog
+  hintLog.lineNumber = 5;
+  loudError != undefined && hintLog.setLogDefault('throwError', loudError);
+  debugBreak != undefined && hintLog.setLogDefault('debuggerBreakpoint', debugBreak);
+  propOnly != undefined && hintLog.setLogDefault('propertyOnly', propOnly);
+  includeLine != undefined && hintLog.setLogDefault('includeLine', includeLine);
 };
 
 /**
-* Error function thrown on detection of DOM manipulation.
-* May be overriden to throw custom error function if desired.
+* The DOM-interceptor should not throw errors because
+* of its own access to the DOM. Within the interceptor
+* the listener should have no behavior
 */
-domInterceptor.callListenerWithMessage = function(message) {
+domInterceptor._listener = domInterceptor.NOOP = function() {};
+domInterceptor.listener = domInterceptor.savedListener;
+
+domInterceptor.savedListener = function(message) {
   hintLog.foundError(message);
 };
 
