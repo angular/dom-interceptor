@@ -17,10 +17,6 @@ describe('domInterceptor', function() {
     noRemove = true;
   }
 
-  beforeEach(function() {
-    domInterceptor.callListenerWithMessage = jasmine.createSpy('callListenerWithMessage');
-  });
-
   Object.getOwnPropertyDescriptor(EventTarget.prototype, EventTarget.prototype.addEventListener);
 
   describe('collectUnalteredPrototypeProperties()', function() {
@@ -56,44 +52,48 @@ describe('domInterceptor', function() {
 
 
       it('should patch existing elements in the DOM', function() {
+          spyOn(hintLog, 'foundError');
           var testElement = document.createElement('div');
           testElement.setAttribute('id', 'test');
           document.body.appendChild(testElement);
           domInterceptor.patchExistingElements();
           testElement.innerHTML = 'new innerHTML value';
           //Counts once for getting innerHTML, once for setting
-          expect(domInterceptor.callListenerWithMessage.callCount).toBe(2);
+          expect(hintLog.foundError.callCount).toBe(2);
           domInterceptor.unpatchExistingElements();
       });
   });
 
   describe('patchProperties()', function() {
     it('should patch target properties of created HTML objects', function() {
+      spyOn(hintLog, 'foundError');
       var testProperty = 'innerHTML';
       var element = document.createElement('a');
       var copy = element;
       domInterceptor.patchElementProperties(element);
-      expect(domInterceptor.callListenerWithMessage).not.toHaveBeenCalled();
+      expect(hintLog.foundError).not.toHaveBeenCalled();
       element.innerHTML = 'new innerHTML value';
-      expect(domInterceptor.callListenerWithMessage.callCount).toBe(2);
+      expect(hintLog.foundError.callCount).toBe(2);
       domInterceptor.unpatchElementProperties(element, copy);
     });
 
 
     it('should not preserve the functionality of DOM APIS that are patched on individual elements', function() {
+      spyOn(hintLog, 'foundError');
       var element = document.createElement('a');
       var copy = element;
       expect(element.innerHTML).toBe('');
       domInterceptor.patchElementProperties(element);
       element.innerHTML = 'Testing Value';
       expect(element.innerHTML).toBe('');
-      expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
+      expect(hintLog.foundError).toHaveBeenCalled();
       domInterceptor.unpatchElementProperties(element, copy);
     });
   });
 
   describe('unpatchExistingElements()', function() {
       it('should return existing elements to their before patch state', function() {
+          spyOn(hintLog, 'foundError');
           var testElement = document.createElement('div');
           testElement.innerHTML = 'testing html';
           testElement.setAttribute('id', 'testNew');
@@ -112,7 +112,7 @@ describe('domInterceptor', function() {
 
           expect(testElement.innerHTML).toBe('testing html');
           expect(document.getElementById('testNew').innerHTML).toBe('testing html');
-          expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
+          expect(hintLog.foundError).toHaveBeenCalled();
 
           domInterceptor.unpatchExistingElements();
 
@@ -122,20 +122,21 @@ describe('domInterceptor', function() {
   });
   describe('unpatchElementProperties()', function() {
     it('should unpatch target properties patched on HTML objects', function() {
+      spyOn(hintLog, 'foundError');
       var element = document.createElement('a');
       expect(element.innerHTML).toBe('');
       domInterceptor.patchElementProperties(element);
       expect(element.innerHTML).toBe('');
-      expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
+      expect(hintLog.foundError).toHaveBeenCalled();
       var originalElementProperties = {
           'innerHTML': '',
           'parentElement': ''
       }
       domInterceptor.unpatchElementProperties(element, originalElementProperties);
 
-      domInterceptor.callListenerWithMessage.reset();
+      hintLog.foundError.reset();
       expect(element.innerHTML).toBe('');
-      expect(domInterceptor.callListenerWithMessage).not.toHaveBeenCalled();
+      expect(hintLog.foundError).not.toHaveBeenCalled();
     });
   });
   describe('patchOnePrototype()', function() {
@@ -150,9 +151,10 @@ describe('domInterceptor', function() {
   describe('addManipulationListener()', function() {
     // CURRENTLY, THE IMPLEMENTATION DOES NOT PATCH INDIVIDUAL ELEMENTS
     // it('should patch existing DOM elements', function() {
+    //   spyOn(hintLog, 'foundError');
     //   spyOn(domInterceptor, 'patchExistingElements');
     //   expect(domInterceptor.patchExistingElements).not.toHaveBeenCalled();
-    //   domInterceptor.addManipulationListener(domInterceptor.callListenerWithMessage);
+    //   domInterceptor.addManipulationListener(hintLog.foundError);
     //   expect(domInterceptor.patchExistingElements).toHaveBeenCalled();
     //   domInterceptor.removeManipulationListener();
     // });
@@ -160,8 +162,9 @@ describe('domInterceptor', function() {
 
     it('should patch the functions of Element.prototype', function() {
       spyOn(domInterceptor, 'patchOnePrototype');
+      spyOn(hintLog, 'foundError');
       expect(domInterceptor.patchOnePrototype).not.toHaveBeenCalled();
-      domInterceptor.addManipulationListener(domInterceptor.callListenerWithMessage);
+      domInterceptor.addManipulationListener(hintLog.foundError);
       expect(domInterceptor.patchOnePrototype).toHaveBeenCalledWith(Element);
       domInterceptor.removeManipulationListener();
     });
@@ -169,8 +172,9 @@ describe('domInterceptor', function() {
 
     it('should patch the functions of Node.prototype', function() {
       spyOn(domInterceptor, 'patchOnePrototype');
+      spyOn(hintLog, 'foundError');
       expect(domInterceptor.patchOnePrototype).not.toHaveBeenCalled();
-      domInterceptor.addManipulationListener(domInterceptor.callListenerWithMessage);
+      domInterceptor.addManipulationListener(hintLog.foundError);
       expect(domInterceptor.patchOnePrototype).toHaveBeenCalledWith(Node);
       domInterceptor.removeManipulationListener();
     });
@@ -178,8 +182,9 @@ describe('domInterceptor', function() {
 
     it('should patch the functions of EventTarget.prototype', function() {
       spyOn(domInterceptor, 'patchOnePrototype');
+      spyOn(hintLog, 'foundError');
       expect(domInterceptor.patchOnePrototype).not.toHaveBeenCalled();
-      domInterceptor.addManipulationListener(domInterceptor.callListenerWithMessage);
+      domInterceptor.addManipulationListener(hintLog.foundError);
       expect(domInterceptor.patchOnePrototype).toHaveBeenCalledWith(EventTarget);
       domInterceptor.removeManipulationListener();
     });
@@ -187,8 +192,9 @@ describe('domInterceptor', function() {
 
     it('should patch the functions of Document.prototype', function() {
      spyOn(domInterceptor, 'patchOnePrototype');
+      spyOn(hintLog, 'foundError');
       expect(domInterceptor.patchOnePrototype).not.toHaveBeenCalled();
-      domInterceptor.addManipulationListener(domInterceptor.callListenerWithMessage);
+      domInterceptor.addManipulationListener(hintLog.foundError);
       expect(domInterceptor.patchOnePrototype).toHaveBeenCalledWith(Document);
       domInterceptor.removeManipulationListener();
     });
@@ -204,41 +210,45 @@ describe('domInterceptor', function() {
 
     //WITHOUT PATCHING OF INDIVIDUAL ELEMENTS, THESE TESTS DO NOT PASS
     // it('should detect getting element.innerHTML', function() {
+    //   spyOn(hintLog, 'foundError');
     //   var testElement = document.createElement('div');
     //   document.body.appendChild(testElement);
     //   domInterceptor.addManipulationListener();
     //   var inner = testElement.innerHTML;
-    //   //expect(domInterceptor.callListenerWithMessage.callCount).toBe(1);
-    //   expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
+    //   //expect(hintLog.foundError.callCount).toBe(1);
+    //   expect(hintLog.foundError).toHaveBeenCalled();
     //   domInterceptor.removeManipulationListener();
     // });
 
 
     // it('should detect setting element.innerHTML', function() {
+    //   spyOn(hintLog, 'foundError');
     //   var element = document.createElement('div');
     //   document.body.appendChild(element);
     //   domInterceptor.addManipulationListener();
     //   element.innerHTML = 'blank';
-    //   expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
+    //   expect(hintLog.foundError).toHaveBeenCalled();
     //   domInterceptor.removeManipulationListener();
     // });
 
 
     // it('should detect getting element.parentElement', function() {
+    //   spyOn(hintLog, 'foundError');
     //   var element = document.createElement('div');
     //   document.body.appendChild(element);
     //   domInterceptor.addManipulationListener();
     //   var parent = element.parentElement;
-    //   expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
+    //   expect(hintLog.foundError).toHaveBeenCalled();
     //   domInterceptor.removeManipulationListener();
     // });
 
     if(!noRemove) {
       it('should detect calling element.remove', function() {
+        spyOn(hintLog, 'foundError');
         domInterceptor.addManipulationListener();
         var element = document.createElement('div');
         element.remove();
-        expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
+        expect(hintLog.foundError).toHaveBeenCalled();
         domInterceptor.removeManipulationListener();
       });
     }
@@ -247,32 +257,35 @@ describe('domInterceptor', function() {
     //Test not run if prototype cannot be patched
     if(!prototypeNotAvailable) {
       it('should detect calling element.addEventListener', function() {
+        spyOn(hintLog, 'foundError');
         domInterceptor.addManipulationListener();
         var element = document.createElement('div');
         var parent = element.addEventListener('click', function(e){});
-        expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
+        expect(hintLog.foundError).toHaveBeenCalled();
         domInterceptor.removeManipulationListener();
       });
 
 
       it('should detect calling element.insertBefore', function() {
+        spyOn(hintLog, 'foundError');
         var parentElement = document.createElement('div');
         var referenceElement = document.createElement('div');
         parentElement.appendChild(referenceElement);
         domInterceptor.addManipulationListener();
         var newElement = document.createElement('div');
         parentElement.insertBefore(newElement, referenceElement);
-        expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
+        expect(hintLog.foundError).toHaveBeenCalled();
         domInterceptor.removeManipulationListener();
       });
 
 
       it('should detect calling element.appendChild', function() {
+        spyOn(hintLog, 'foundError');
         var parentElement = document.createElement('div');
         var childElement = document.createElement('div');
         domInterceptor.addManipulationListener();
         parentElement.appendChild(childElement);
-        expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
+        expect(hintLog.foundError).toHaveBeenCalled();
         domInterceptor.removeManipulationListener();
       });
     }
@@ -346,16 +359,18 @@ describe('domInterceptor', function() {
   });
 
   describe('listener properties', function() {
-    beforeEach(function() {
-      domInterceptor.callListenerWithMessage = function(message) {
-        hintLog.foundError(message);
-      };
+    it('should use default hintLog behavior if no defaults are set', function() {
+      domInterceptor.setListenerDefaults();
+      expect(hintLog.debugBreak).toBe(false);
+      expect(hintLog.propOnly).toBe(false);
+      expect(hintLog.includeLine).toBe(true);
     });
+
 
     it('should throw an error if loudError default is set', function() {
       domInterceptor.setListenerDefaults(true, false, false, true);
       expect(function() {
-        domInterceptor.callListenerWithMessage('An error');
+        hintLog.foundError('An error');
       }).toThrow();
     });
 
@@ -363,13 +378,6 @@ describe('domInterceptor', function() {
     it('should pause the debugger if the debugBreak parameter is set', function() {
       domInterceptor.setListenerDefaults(false, true, false, true);
       expect(hintLog.debugBreak).toEqual(true);
-    });
-
-    it('should print a helpful line number', function() {
-      domInterceptor.setListenerDefaults(false, false, false, true);
-      domInterceptor.callListenerWithMessage('An error was created');
-      expect(hintLog.printAvailableMessages)
-
     });
   });
 
@@ -383,7 +391,7 @@ describe('domInterceptor', function() {
   //     test = document.getElementById('test');
   //     test.innerHTML = 'new value';
   //     //Proxies execute listener function
-  //     expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
+  //     expect(hintLog.foundError).toHaveBeenCalled();
   //     domInterceptor.unPatchAccess();
   //   });
 
@@ -394,7 +402,7 @@ describe('domInterceptor', function() {
   //     document.body.appendChild(test2);
   //     var elements = document.getElementsByTagName('div');
   //     elements[0].innerHTML = 'new value';
-  //     expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
+  //     expect(hintLog.foundError).toHaveBeenCalled();
   //     domInterceptor.unPatchAccess();
   //   });
   // });
@@ -409,7 +417,7 @@ describe('domInterceptor', function() {
   //     test2 = document.getElementById('test');
   //     test2.innerHTML = 'new value';
   //     //Proxies execute listener function
-  //     expect(domInterceptor.callListenerWithMessage).not.toHaveBeenCalled();
+  //     expect(hintLog.foundError).not.toHaveBeenCalled();
   //   });
   // });
 
@@ -424,7 +432,7 @@ describe('domInterceptor', function() {
   //       document.body.appendChild(test);
   //     }).not.toThrow();
   //     test.innerHTML = 'new html';
-  //     expect(domInterceptor.callListenerWithMessage).toHaveBeenCalled();
+  //     expect(hintLog.foundError).toHaveBeenCalled();
   //   });
   // });
 });
