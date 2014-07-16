@@ -1,6 +1,16 @@
 describe('domInterceptor', function() {
+  var propsNotConfigurable;
   var prototypeNotAvailable;
+  var eventTargetNotAvailable;
   var noRemove;
+
+  try {
+    var div = document.createElement('div');
+    domInterceptor.patchElementProperties(div);
+  }
+  catch(e) {
+    propsNotConfigurable = true;
+  }
 
   try {
     var objectProperties = Object.getOwnPropertyNames(Element.prototype);
@@ -10,6 +20,16 @@ describe('domInterceptor', function() {
   }
   catch(e) {
     prototypeNotAvailable = true;
+  }
+
+  try {
+    var objectProperties = Object.getOwnPropertyNames(EventTarget.prototype);
+    objectProperties.forEach(function(prop) {
+      Object.getOwnPropertyDescriptor(EventTarget.prototype, prop);
+    });
+  }
+  catch(e) {
+    eventTargetNotAvailable = true;
   }
 
   var oneElem = document.createElement('div');
@@ -39,104 +59,114 @@ describe('domInterceptor', function() {
     });
   });
 
-  describe('patchExistingElements()', function() {
-      it('should save versions of the original DOM elements', function() {
-        var elements = document.getElementsByTagName('*');
-        var length = elements.length;
-        domInterceptor.patchExistingElements();
-        expect(domInterceptor.savedElements[length - 1]).not.toBeUndefined();
-        domInterceptor.unpatchExistingElements();
+  //Safari does not allow configuration of the properties that
+  //are patched in this patching of indivdual elements.
+  //Hence this patching is not tested.
+  //The current implementation of DOM-interceptor's listener
+  //does not use these patching functions. They are left as
+  //interesting methods for individual use.
+  if(!propsNotConfigurable) {
+      describe('patchExistingElements()', function() {
+          it('should save versions of the original DOM elements', function() {
+            var elements = document.getElementsByTagName('*');
+            var length = elements.length;
+            domInterceptor.patchExistingElements();
+            expect(domInterceptor.savedElements[length - 1]).not.toBeUndefined();
+            domInterceptor.unpatchExistingElements();
+          });
+
+
+          it('should patch existing elements in the DOM', function() {
+              spyOn(hintLog, 'foundError');
+              var testElement = document.createElement('div');
+              testElement.setAttribute('id', 'test');
+              document.body.appendChild(testElement);
+              domInterceptor.patchExistingElements();
+              testElement.innerHTML = 'new innerHTML value';
+              //Counts once for getting innerHTML, once for setting
+              expect(hintLog.foundError.callCount).toBe(2);
+              domInterceptor.unpatchExistingElements();
+          });
       });
 
-
-      it('should patch existing elements in the DOM', function() {
+      describe('patchProperties()', function() {
+        it('should patch target properties of created HTML objects', function() {
           spyOn(hintLog, 'foundError');
-          var testElement = document.createElement('div');
-          testElement.setAttribute('id', 'test');
-          document.body.appendChild(testElement);
-          domInterceptor.patchExistingElements();
-          testElement.innerHTML = 'new innerHTML value';
-          //Counts once for getting innerHTML, once for setting
+          var testProperty = 'innerHTML';
+          var element = document.createElement('a');
+          var copy = element;
+          domInterceptor.patchElementProperties(element);
+          expect(hintLog.foundError).not.toHaveBeenCalled();
+          element.innerHTML = 'new innerHTML value';
           expect(hintLog.foundError.callCount).toBe(2);
-          domInterceptor.unpatchExistingElements();
-      });
-  });
-
-  describe('patchProperties()', function() {
-    it('should patch target properties of created HTML objects', function() {
-      spyOn(hintLog, 'foundError');
-      var testProperty = 'innerHTML';
-      var element = document.createElement('a');
-      var copy = element;
-      domInterceptor.patchElementProperties(element);
-      expect(hintLog.foundError).not.toHaveBeenCalled();
-      element.innerHTML = 'new innerHTML value';
-      expect(hintLog.foundError.callCount).toBe(2);
-      domInterceptor.unpatchElementProperties(element, copy);
-    });
+          domInterceptor.unpatchElementProperties(element, copy);
+        });
 
 
-    it('should not preserve the functionality of DOM APIS that are patched on individual elements', function() {
-      spyOn(hintLog, 'foundError');
-      var element = document.createElement('a');
-      var copy = element;
-      expect(element.innerHTML).toBe('');
-      domInterceptor.patchElementProperties(element);
-      element.innerHTML = 'Testing Value';
-      expect(element.innerHTML).toBe('');
-      expect(hintLog.foundError).toHaveBeenCalled();
-      domInterceptor.unpatchElementProperties(element, copy);
-    });
-  });
-
-  describe('unpatchExistingElements()', function() {
-      it('should return existing elements to their before patch state', function() {
+        it('should not preserve the functionality of DOM APIS that are patched on individual elements', function() {
           spyOn(hintLog, 'foundError');
-          var testElement = document.createElement('div');
-          testElement.innerHTML = 'testing html';
-          testElement.setAttribute('id', 'testNew');
-
-          var testElement2 = document.createElement('div');
-          testElement2.innerHTML = 'different html';
-          testElement2.setAttribute('id', 'test2');
-
-          document.body.appendChild(testElement);
-          document.body.appendChild(testElement2);
-
-          expect(testElement.innerHTML).toBe('testing html');
-          expect(document.getElementById('testNew').innerHTML).toBe('testing html');
-
-          domInterceptor.patchExistingElements();
-
-          expect(testElement.innerHTML).toBe('testing html');
-          expect(document.getElementById('testNew').innerHTML).toBe('testing html');
+          var element = document.createElement('a');
+          var copy = element;
+          expect(element.innerHTML).toBe('');
+          domInterceptor.patchElementProperties(element);
+          element.innerHTML = 'Testing Value';
+          expect(element.innerHTML).toBe('');
           expect(hintLog.foundError).toHaveBeenCalled();
-
-          domInterceptor.unpatchExistingElements();
-
-          expect(document.getElementById('testNew').innerHTML).toBe('testing html');
-          expect(document.getElementById('test2').innerHTML).toBe('different html');
+          domInterceptor.unpatchElementProperties(element, copy);
+        });
       });
-  });
-  describe('unpatchElementProperties()', function() {
-    it('should unpatch target properties patched on HTML objects', function() {
-      spyOn(hintLog, 'foundError');
-      var element = document.createElement('a');
-      expect(element.innerHTML).toBe('');
-      domInterceptor.patchElementProperties(element);
-      expect(element.innerHTML).toBe('');
-      expect(hintLog.foundError).toHaveBeenCalled();
-      var originalElementProperties = {
-          'innerHTML': '',
-          'parentElement': ''
-      }
-      domInterceptor.unpatchElementProperties(element, originalElementProperties);
 
-      hintLog.foundError.reset();
-      expect(element.innerHTML).toBe('');
-      expect(hintLog.foundError).not.toHaveBeenCalled();
-    });
-  });
+      describe('unpatchExistingElements()', function() {
+          it('should return existing elements to their before patch state', function() {
+              spyOn(hintLog, 'foundError');
+              var testElement = document.createElement('div');
+              testElement.innerHTML = 'testing html';
+              testElement.setAttribute('id', 'testNew');
+
+              var testElement2 = document.createElement('div');
+              testElement2.innerHTML = 'different html';
+              testElement2.setAttribute('id', 'test2');
+
+              document.body.appendChild(testElement);
+              document.body.appendChild(testElement2);
+
+              expect(testElement.innerHTML).toBe('testing html');
+              expect(document.getElementById('testNew').innerHTML).toBe('testing html');
+
+              domInterceptor.patchExistingElements();
+
+              expect(testElement.innerHTML).toBe('testing html');
+              expect(document.getElementById('testNew').innerHTML).toBe('testing html');
+              expect(hintLog.foundError).toHaveBeenCalled();
+
+              domInterceptor.unpatchExistingElements();
+
+              expect(document.getElementById('testNew').innerHTML).toBe('testing html');
+              expect(document.getElementById('test2').innerHTML).toBe('different html');
+          });
+      });
+
+      describe('unpatchElementProperties()', function() {
+        it('should unpatch target properties patched on HTML objects', function() {
+          spyOn(hintLog, 'foundError');
+          var element = document.createElement('a');
+          expect(element.innerHTML).toBe('');
+          domInterceptor.patchElementProperties(element);
+          expect(element.innerHTML).toBe('');
+          expect(hintLog.foundError).toHaveBeenCalled();
+          var originalElementProperties = {
+              'innerHTML': '',
+              'parentElement': ''
+          }
+          domInterceptor.unpatchElementProperties(element, originalElementProperties);
+
+          hintLog.foundError.reset();
+          expect(element.innerHTML).toBe('');
+          expect(hintLog.foundError).not.toHaveBeenCalled();
+        });
+      });
+  }
+
   describe('patchOnePrototype()', function() {
       it('should patch all properties of a given object .prototype', function() {
         var originalFunction = Element.prototype.getAttribute;
@@ -178,14 +208,16 @@ describe('domInterceptor', function() {
     });
 
 
-    it('should patch the functions of EventTarget.prototype', function() {
-      spyOn(domInterceptor, 'patchOnePrototype');
-      spyOn(hintLog, 'foundError');
-      expect(domInterceptor.patchOnePrototype).not.toHaveBeenCalled();
-      domInterceptor.addManipulationListener(hintLog.foundError);
-      expect(domInterceptor.patchOnePrototype).toHaveBeenCalledWith(EventTarget);
-      domInterceptor.removeManipulationListener();
-    });
+    if(!eventTargetNotAvailable) {
+      it('should patch the functions of EventTarget.prototype', function() {
+          spyOn(domInterceptor, 'patchOnePrototype');
+          spyOn(hintLog, 'foundError');
+          expect(domInterceptor.patchOnePrototype).not.toHaveBeenCalled();
+          domInterceptor.addManipulationListener(hintLog.foundError);
+          expect(domInterceptor.patchOnePrototype).toHaveBeenCalledWith(EventTarget);
+          domInterceptor.removeManipulationListener();
+      });
+    }
 
 
     it('should patch the functions of Document.prototype', function() {

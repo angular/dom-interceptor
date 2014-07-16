@@ -16,8 +16,11 @@ domInterceptor.addManipulationListener = function(loudError, debugStatement, pro
   domInterceptor.patchOnePrototype(Element);
   domInterceptor.collectUnalteredPrototypeProperties(Node, 'Node');
   domInterceptor.patchOnePrototype(Node);
-  domInterceptor.collectUnalteredPrototypeProperties(EventTarget, 'EventTarget');
-  domInterceptor.patchOnePrototype(EventTarget);
+  //Event Target is not available in Safari
+  // try(domInterceptor.collectUnalteredPrototypeProperties(EventTarget, 'EventTarget')) {
+  //   domInterceptor.collectUnalteredPrototypeProperties(EventTarget, 'EventTarget');
+  //   domInterceptor.patchOnePrototype(EventTarget);
+  // } catch(e) {}
   domInterceptor.collectUnalteredPrototypeProperties(Document, 'Document');
   domInterceptor.patchOnePrototype(Document);
   domInterceptor.listener = domInterceptor.savedListener;
@@ -164,7 +167,7 @@ domInterceptor.removeManipulationListener = function() {
   domInterceptor.listener = domInterceptor._listener;
   domInterceptor.unpatchOnePrototype(Element, 'Element');
   domInterceptor.unpatchOnePrototype(Node, 'Node');
-  domInterceptor.unpatchOnePrototype(EventTarget, 'EventTarget');
+  EventTarget && domInterceptor.unpatchOnePrototype(EventTarget, 'EventTarget');
   domInterceptor.unpatchOnePrototype(Document, 'Document');
   domInterceptor.listener = domInterceptor.savedListener;
 };
@@ -213,6 +216,12 @@ domInterceptor.savedElements = {};
 * some properties exist only on the elements themselves. This
 * function retrieves all the current elements on the page and
 * patches them to call the given listener function if manipulated.
+* THE CURRENT LISTENER DOES NOT USE THIS FEATURE. Patching the DOM
+* elements was seen as too high of a cost for little return.
+* Additionally, using proxies (which are not yet common to browsers) would
+* be safer than actually patching elements. This method and its
+* helper patchElementProperties are left as interesting individual methods.
+* This method will cause errors in Safari where patching of properties is not allowed.
 */
 domInterceptor.patchExistingElements = function() {
   domInterceptor.listener = domInterceptor._listener;
@@ -227,6 +236,8 @@ domInterceptor.patchExistingElements = function() {
 /**
 * Function to patch specified properties of a given
 * element to call the listener function on getting or setting
+* NOT USED BY THE CURRENT LISTENER.
+* This method will cause errors in Safari where patching of properties is not allowed.
 **/
 domInterceptor.patchElementProperties = function(element) {
   domInterceptor.listener = domInterceptor._listener;
