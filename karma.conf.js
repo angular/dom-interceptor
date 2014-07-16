@@ -30,28 +30,25 @@ module.exports = function(config) {
     preprocessors: {
       'dom-interceptor.js': ['browserify']
     },
-    SauceLabs: {
-      preprocessors: {
+    preprocessors: {
       'dom-interceptor.js': ['browserify']
-      },
-      sauceLabs: {
-        testName: 'Dom Interceptor Unit Tests',
-        startConnect: true,
-        options: {
-          'selenium-version': '2.37.0'
-        }
-      },
-      customLaunchers: customLaunchers,
-      browsers: Object.keys(customLaunchers),
-      reporters: ['dots', 'saucelabs'],
-      singleRun: true,
-      plugins: [
-        'karma-*'
-        // require('karma-sauce-launcher')
-      ]
-    }
+    },
+    sauceLabs: {
+      testName: 'Dom Interceptor Unit Tests',
+      startConnect: true,
+      options: {
+        'selenium-version': '2.37.0'
+      }
+    },
+    customLaunchers: customLaunchers,
+    browsers: Object.keys(customLaunchers),
+    reporters: ['dots', 'saucelabs'],
+    singleRun: true,
+    plugins: [
+      'karma-*'
+      // require('karma-sauce-launcher')
+    ]
   });
-
 
   if (process.env.TRAVIS) {
     config.sauceLabs.build = 'TRAVIS #' + process.env.TRAVIS_BUILD_NUMBER + ' (' + process.env.TRAVIS_BUILD_ID + ')';
