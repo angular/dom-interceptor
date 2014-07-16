@@ -355,7 +355,7 @@ describe('domInterceptor', function() {
     it('should throw an error if loudError default is set', function() {
       domInterceptor.setListenerDefaults(true, false, false, true);
       expect(function() {
-        domInterceptor.callListenerWithMessage({message: 'A message:', property: 'A property'});
+        domInterceptor.callListenerWithMessage('An error');
       }).toThrow();
     });
 
