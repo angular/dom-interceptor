@@ -123,32 +123,32 @@ domInterceptor.patchOnePrototype = function(type) {
             };
           }
         } else {
-          if (typeof desc.set === 'function') {
-            var originalSet = desc.set;
-            desc.set = function () {
-              domInterceptor.listener('set:' + prop);
-              return originalSet.apply(this, arguments);
-            };
+            if (typeof desc.set === 'function') {
+              var originalSet = desc.set;
+              desc.set = function () {
+                domInterceptor.listener('set:' + prop);
+                return originalSet.apply(this, arguments);
+              };
+            }
+            if (typeof desc.get === 'function') {
+              var originalGet = desc.get;
+              desc.get = function () {
+                domInterceptor.listener('get:' + prop);
+                return originalGet.apply(this, arguments);
+              };
+            }
           }
-          if (typeof desc.get === 'function') {
-            var originalGet = desc.get;
-            desc.get = function () {
-              domInterceptor.listener('get:' + prop);
-              return originalGet.apply(this, arguments);
-            };
-          }
-        }
         Object.defineProperty(type.prototype, prop, desc);
       } else if (desc.writable) {
-        try {
-          var original = type.prototype[prop];
-          type.prototype[prop] = function () {
-            domInterceptor.listener(prop);
-            return original.apply(this, arguments);
-          };
+          try {
+            var original = type.prototype[prop];
+            type.prototype[prop] = function () {
+              domInterceptor.listener(prop);
+              return original.apply(this, arguments);
+            };
+          }
+          catch (e) {}
         }
-        catch (e) {}
-      }
     }
   });
   domInterceptor.listener = domInterceptor.savedListener;
@@ -176,7 +176,7 @@ domInterceptor.removeManipulationListener = function() {
 **/
 domInterceptor.unpatchOnePrototype = function(type, typeName) {
   domInterceptor.listener = domInterceptor._listener;
-  if(typeName == undefined) {
+  if(!typeName) {
     throw new Error('typeName must be the name used to save prototype properties. Got: ' + typeName);
   }
   var objectProperties = Object.getOwnPropertyNames(type.prototype);
@@ -217,7 +217,7 @@ domInterceptor.savedElements = {};
 domInterceptor.patchExistingElements = function() {
   domInterceptor.listener = domInterceptor._listener;
   var elements = document.getElementsByTagName('*');
-  for(var i = 0; i < elements.length; i++) {
+  for(var i = 0, length = elements.length; i < length; i++) {
     domInterceptor.save(elements[i], i);
     domInterceptor.patchElementProperties(elements[i]);
   }
