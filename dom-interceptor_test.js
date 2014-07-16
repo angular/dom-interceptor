@@ -17,8 +17,6 @@ describe('domInterceptor', function() {
     noRemove = true;
   }
 
-  Object.getOwnPropertyDescriptor(EventTarget.prototype, EventTarget.prototype.addEventListener);
-
   describe('collectUnalteredPrototypeProperties()', function() {
     it('should collect the unpatched properties of prototypes', function() {
       var objectPropertyNames = Object.getOwnPropertyNames(Element.prototype);
