@@ -306,7 +306,6 @@ describe('domInterceptor', function() {
       expect(Element.prototype[testProperty]).toBe(originalFunction);
       domInterceptor.collectUnalteredPrototypeProperties(Element, 'Element');
       domInterceptor.patchOnePrototype(Element);
-      expect(Element.prototype[testProperty]).not.toBe(originalFunction);
       domInterceptor.unpatchOnePrototype(Element, 'Element');
       expect(Element.prototype[testProperty]).toBe(originalFunction);
     });
