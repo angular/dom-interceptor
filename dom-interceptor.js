@@ -16,11 +16,6 @@ domInterceptor.addManipulationListener = function(loudError, debugStatement, pro
   domInterceptor.patchOnePrototype(Element);
   domInterceptor.collectUnalteredPrototypeProperties(Node, 'Node');
   domInterceptor.patchOnePrototype(Node);
-  //Event Target is not available in Safari
-  // try(domInterceptor.collectUnalteredPrototypeProperties(EventTarget, 'EventTarget')) {
-  //   domInterceptor.collectUnalteredPrototypeProperties(EventTarget, 'EventTarget');
-  //   domInterceptor.patchOnePrototype(EventTarget);
-  // } catch(e) {}
   domInterceptor.collectUnalteredPrototypeProperties(Document, 'Document');
   domInterceptor.patchOnePrototype(Document);
   domInterceptor.listener = domInterceptor.savedListener;
@@ -167,7 +162,6 @@ domInterceptor.removeManipulationListener = function() {
   domInterceptor.listener = domInterceptor._listener;
   domInterceptor.unpatchOnePrototype(Element, 'Element');
   domInterceptor.unpatchOnePrototype(Node, 'Node');
-  EventTarget && domInterceptor.unpatchOnePrototype(EventTarget, 'EventTarget');
   domInterceptor.unpatchOnePrototype(Document, 'Document');
   domInterceptor.listener = domInterceptor.savedListener;
 };
