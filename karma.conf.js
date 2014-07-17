@@ -31,9 +31,6 @@ module.exports = function(config) {
     preprocessors: {
       'dom-interceptor.js': ['browserify']
     },
-    preprocessors: {
-      'dom-interceptor.js': ['browserify']
-    },
     sauceLabs: {
       testName: 'Dom Interceptor Unit Tests',
       startConnect: true,

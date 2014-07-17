@@ -1,7 +1,6 @@
 describe('domInterceptor', function() {
   var propsNotConfigurable;
   var prototypeNotAvailable;
-  var eventTargetNotAvailable;
   var noRemove;
 
   try {
@@ -20,16 +19,6 @@ describe('domInterceptor', function() {
   }
   catch(e) {
     prototypeNotAvailable = true;
-  }
-
-  try {
-    var objectProperties = Object.getOwnPropertyNames(EventTarget.prototype);
-    objectProperties.forEach(function(prop) {
-      Object.getOwnPropertyDescriptor(EventTarget.prototype, prop);
-    });
-  }
-  catch(e) {
-    eventTargetNotAvailable = true;
   }
 
   var oneElem = document.createElement('div');
@@ -208,18 +197,6 @@ describe('domInterceptor', function() {
     });
 
 
-    if(!eventTargetNotAvailable) {
-      it('should patch the functions of EventTarget.prototype', function() {
-          spyOn(domInterceptor, 'patchOnePrototype');
-          spyOn(hintLog, 'foundError');
-          expect(domInterceptor.patchOnePrototype).not.toHaveBeenCalled();
-          domInterceptor.addManipulationListener(hintLog.foundError);
-          expect(domInterceptor.patchOnePrototype).toHaveBeenCalledWith(EventTarget);
-          domInterceptor.removeManipulationListener();
-      });
-    }
-
-
     it('should patch the functions of Document.prototype', function() {
      spyOn(domInterceptor, 'patchOnePrototype');
       spyOn(hintLog, 'foundError');
@@ -283,7 +260,7 @@ describe('domInterceptor', function() {
       });
     }
 
-    //Will only be patched if Node.prototype and EventTarget.prototype can be patched
+    //Will only be patched if prototypes can be patched
     //Test not run if prototype cannot be patched
     if(!prototypeNotAvailable) {
       it('should detect calling element.addEventListener', function() {
@@ -358,15 +335,6 @@ describe('domInterceptor', function() {
       expect(domInterceptor.unpatchOnePrototype).not.toHaveBeenCalled();
       domInterceptor.removeManipulationListener();
       expect(domInterceptor.unpatchOnePrototype).toHaveBeenCalledWith(Node, 'Node');
-    });
-
-
-    it('should remove the patch from functions on EventTarget.prototype', function() {
-      spyOn(domInterceptor, 'unpatchOnePrototype');
-      spyOn(domInterceptor, 'unpatchExistingElements');
-      expect(domInterceptor.unpatchOnePrototype).not.toHaveBeenCalled();
-      domInterceptor.removeManipulationListener();
-      expect(domInterceptor.unpatchOnePrototype).toHaveBeenCalledWith(EventTarget, 'EventTarget');
     });
 
 
