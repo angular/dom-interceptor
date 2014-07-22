@@ -18,26 +18,6 @@ domInterceptor.addManipulationListener = function(listener) {
   domInterceptor.listener = domInterceptor.savedListener;
 };
 
-//Use the HintLog module to provide warnings consistent with other AngularHint Modules
-//Once hintLog is initialized, it will be configured with the listener defaults
-var hintLog = require('angular-hint-log');
-
-/**
-* Set defaults for the 'listener' that listens for infringements of DOM best practices.
-* When the 'listener' is activated, it will inform the user of the error. The listener
-* uses the HintLog module to provide the user with errors in a format that is consistent
-* with other AngularHint modules.
-*/
-function setListenerDefaults(defaults) {
-  // defaults.moduleName != undefined && hintLog.setLogDefault('moduleName', defaults.lineNumber);
-  // defaults.moduleDescription != undefined && hintLog.setLogDefault('moduleDescription', defaults.lineNumber);
-  // defaults.lineNumber != undefined && hintLog.setLogDefault('lineNumber', defaults.lineNumber);
-  // defaults.loudError != undefined && hintLog.setLogDefault('throwError', defaults.loudError);
-  // defaults.debugBreak != undefined && hintLog.setLogDefault('debuggerBreakpoint', defaults.debugBreak);
-  // defaults.propOnly != undefined && hintLog.setLogDefault('propertyOnly', defaults.propOnly);
-  // defaults.includeLine != undefined && hintLog.setLogDefault('includeLine', defaults.includeLine);
-};
-
 /**
 * The DOM-interceptor should not throw errors because
 * of its own access to the DOM. Within the interceptor
@@ -47,15 +27,6 @@ domInterceptor._listener = domInterceptor.NOOP = function() {};
 domInterceptor.listener = domInterceptor.savedListener;
 
 domInterceptor.savedListener = function(message) {};
-
-// function findLineNumber() {
-//     var e = new Error();
-//     //Find the line in the user's program rather than in this service
-//     dump(e);
-//     var lineNum = e.stack.split('\n')[1];
-//     lineNum = lineNum.split('<anonymous> ')[1] || lineNum;
-//     return lineNum;
-// };
 
 /**
 * Object to preserve all the original properties
@@ -97,7 +68,8 @@ domInterceptor.collectUnalteredPrototypeProperties = function(type, typeName) {
 * call to listener, a function passed as a parameter.
 * If no listener function is provided, the default listener is used.
 */
-domInterceptor.patchOnePrototype = function(type) {
+domInterceptor.patchOnePrototype = function(type, typeName) {
+  domInterceptor.collectUnalteredPrototypeProperties(type, typeName);
   domInterceptor.listener = domInterceptor._listener;
   if (!type || !type.prototype) {
     throw new Error('collectPrototypeProperties() needs a .prototype to collect properties from. ' + type + '.prototype is undefined.');
