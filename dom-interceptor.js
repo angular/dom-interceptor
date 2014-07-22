@@ -1,7 +1,6 @@
 (function (domInterceptor) {
 'use strict';
 
-
 /**
 * Initializes the listener by setting defaults. These defaults are
 * used by the HintLog module to decide how the user should be notified of errors.
@@ -163,7 +162,7 @@ domInterceptor.unpatchOnePrototype = function(type, typeName) {
 };
 
 /**************************************************************************************************/
-/** EXTRA PATCHING METHODS NOT USED IN MAIN DOM-MANIPULATION DETECTOR **/
+/** EXTRA PATCHING METHODS NOT USED IN MAIN DOM-MANIPULATION INTERCEPTOR **/
 
 /**
 * List of DOM API properties to patch on individual elements.
@@ -240,7 +239,6 @@ domInterceptor.save = function(element, index) {
   domInterceptor.savedElements[index] = elementProperties;
   domInterceptor.listener = domInterceptor.savedListener;
 };
-
 
 /**
 * Unpatches all the elements on the page that were patched.
