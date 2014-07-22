@@ -9,15 +9,12 @@
 * prototypes. The unpatched state of the prototype is saved so that
 * it can be safely reverted later.
 **/
-domInterceptor.addManipulationListener = function(loudError, debugStatement, propOnly, includeLine) {
+domInterceptor.addManipulationListener = function(listener) {
   domInterceptor.listener = domInterceptor._listener;
-  domInterceptor.setListenerDefaults(loudError, debugStatement, propOnly, includeLine);
-  domInterceptor.collectUnalteredPrototypeProperties(Element, 'Element');
-  domInterceptor.patchOnePrototype(Element);
-  domInterceptor.collectUnalteredPrototypeProperties(Node, 'Node');
-  domInterceptor.patchOnePrototype(Node);
-  domInterceptor.collectUnalteredPrototypeProperties(Document, 'Document');
-  domInterceptor.patchOnePrototype(Document);
+  domInterceptor.savedListener = listener;
+  domInterceptor.patchOnePrototype(Element, 'Element');
+  domInterceptor.patchOnePrototype(Node, 'Node');
+  domInterceptor.patchOnePrototype(Document, 'Document');
   domInterceptor.listener = domInterceptor.savedListener;
 };
 
@@ -31,18 +28,14 @@ var hintLog = require('angular-hint-log');
 * uses the HintLog module to provide the user with errors in a format that is consistent
 * with other AngularHint modules.
 */
-domInterceptor.setListenerDefaults = function(loudError, debugBreak, propOnly, includeLine) {
-  //Set details of the messages that HintLog will provide
-  hintLog.moduleName = 'DOM';
-  hintLog.moduleDescription = 'Angular best practices are to manipulate the DOM in the view.' +
-    ' See: (https://github.com/angular/angular-hint-dom/blob/master/README.md). ' +
-    'The following functions manipulate the DOM.';
-  //The line of the user's own error appears in line 5 of the stacktrace found by HintLog
-  hintLog.lineNumber = 5;
-  loudError != undefined && hintLog.setLogDefault('throwError', loudError);
-  debugBreak != undefined && hintLog.setLogDefault('debuggerBreakpoint', debugBreak);
-  propOnly != undefined && hintLog.setLogDefault('propertyOnly', propOnly);
-  includeLine != undefined && hintLog.setLogDefault('includeLine', includeLine);
+function setListenerDefaults(defaults) {
+  // defaults.moduleName != undefined && hintLog.setLogDefault('moduleName', defaults.lineNumber);
+  // defaults.moduleDescription != undefined && hintLog.setLogDefault('moduleDescription', defaults.lineNumber);
+  // defaults.lineNumber != undefined && hintLog.setLogDefault('lineNumber', defaults.lineNumber);
+  // defaults.loudError != undefined && hintLog.setLogDefault('throwError', defaults.loudError);
+  // defaults.debugBreak != undefined && hintLog.setLogDefault('debuggerBreakpoint', defaults.debugBreak);
+  // defaults.propOnly != undefined && hintLog.setLogDefault('propertyOnly', defaults.propOnly);
+  // defaults.includeLine != undefined && hintLog.setLogDefault('includeLine', defaults.includeLine);
 };
 
 /**
@@ -53,9 +46,16 @@ domInterceptor.setListenerDefaults = function(loudError, debugBreak, propOnly, i
 domInterceptor._listener = domInterceptor.NOOP = function() {};
 domInterceptor.listener = domInterceptor.savedListener;
 
-domInterceptor.savedListener = function(message) {
-  hintLog.foundError(message);
-};
+domInterceptor.savedListener = function(message) {};
+
+// function findLineNumber() {
+//     var e = new Error();
+//     //Find the line in the user's program rather than in this service
+//     dump(e);
+//     var lineNum = e.stack.split('\n')[1];
+//     lineNum = lineNum.split('<anonymous> ')[1] || lineNum;
+//     return lineNum;
+// };
 
 /**
 * Object to preserve all the original properties
@@ -217,8 +217,9 @@ domInterceptor.savedElements = {};
 * helper patchElementProperties are left as interesting individual methods.
 * This method will cause errors in Safari where patching of properties is not allowed.
 */
-domInterceptor.patchExistingElements = function() {
+domInterceptor.patchExistingElements = function(listener) {
   domInterceptor.listener = domInterceptor._listener;
+  domInterceptor.savedListener = listener;
   var elements = document.getElementsByTagName('*');
   for(var i = 0, length = elements.length; i < length; i++) {
     domInterceptor.save(elements[i], i);
