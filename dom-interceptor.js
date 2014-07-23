@@ -31,7 +31,7 @@ domInterceptor.savedListener = function(message) {};
 * Object to preserve all the original properties
 * that will be restored after patching.
 **/
-domInterceptor.originalProperties = {};
+var originalProperties = {};
 
 /**
 * Helper method to collect all properties of a given prototype.
@@ -57,7 +57,7 @@ domInterceptor.collectUnalteredPrototypeProperties = function(type, typeName) {
     catch(e) {}
   });
   domInterceptor.listener = domInterceptor.savedListener;
-  domInterceptor.originalProperties[typeName] = objectProperties;
+  originalProperties[typeName] = objectProperties;
   return objectProperties;
 };
 
@@ -174,7 +174,7 @@ domInterceptor.propertiesToPatch = ['innerHTML', 'parentElement'];
 /**
 * Object to hold original version of patched elements
 */
-domInterceptor.savedElements = {};
+var savedElements = {};
 
 /**
 * While patching prototypes patches many of the DOM APIs,
@@ -236,7 +236,7 @@ domInterceptor.save = function(element, index) {
   domInterceptor.propertiesToPatch.forEach(function(prop) {
     elementProperties[prop] = element[prop];
   });
-  domInterceptor.savedElements[index] = elementProperties;
+  savedElements[index] = elementProperties;
   domInterceptor.listener = domInterceptor.savedListener;
 };
 
@@ -247,7 +247,7 @@ domInterceptor.unpatchExistingElements = function() {
   domInterceptor.listener = domInterceptor._listener;
   var elements = document.getElementsByTagName('*');
   for(var i = 0; i < elements.length; i++) {
-    var originalElement = domInterceptor.savedElements[i];
+    var originalElement = savedElements[i];
     domInterceptor.unpatchElementProperties(elements[i], originalElement);
   }
   domInterceptor.listener = domInterceptor.savedListener;
