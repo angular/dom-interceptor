@@ -2,11 +2,9 @@
 'use strict';
 
 /**
-* Initializes the listener by setting defaults. These defaults are
-* used by the HintLog module to decide how the user should be notified of errors.
-* Controls the patching process by patching all necessary
-* prototypes. The unpatched state of the prototype is saved so that
-* it can be safely reverted later.
+* Initializes the domInterceptor listener to a function that is provided.
+* The Element, Node, and Document prototypes are then patched to call
+* this listener when DOM APIs are accessed.
 **/
 domInterceptor.addManipulationListener = function(listener) {
   domInterceptor.listener = domInterceptor._listener;
@@ -20,11 +18,10 @@ domInterceptor.addManipulationListener = function(listener) {
 /**
 * The DOM-interceptor should not throw errors because
 * of its own access to the DOM. Within the interceptor
-* the listener should have no behavior
+* the listener should have no behavior.
 */
 domInterceptor._listener = domInterceptor.NOOP = function() {};
 domInterceptor.listener = domInterceptor.savedListener;
-
 domInterceptor.savedListener = function(message) {};
 
 /**
@@ -34,38 +31,9 @@ domInterceptor.savedListener = function(message) {};
 var originalProperties = {};
 
 /**
-* Helper method to collect all properties of a given prototype.
-* When patching is removed, all prototype properties
-* are set back to these original values
-**/
-domInterceptor.collectUnalteredPrototypeProperties = function(type, typeName) {
-  domInterceptor.listener = domInterceptor._listener;
-  if(!type || !type.prototype) {
-    throw new Error('collectUnalteredPrototypeProperties() needs a .prototype to collect properties' +
-      ' from. ' + type + '.prototype is undefined.');
-  }
-  else if(!typeName) {
-    throw new Error('typeName is required to save properties, got: ' + typeName);
-  }
-  var objectProperties = {};
-  var objectPropertyNames = Object.getOwnPropertyNames(type.prototype);
-  objectPropertyNames.forEach(function(prop) {
-    //Access of some prototype values may throw an error
-    try {
-      objectProperties[prop] = type.prototype[prop];
-    }
-    catch(e) {}
-  });
-  domInterceptor.listener = domInterceptor.savedListener;
-  originalProperties[typeName] = objectProperties;
-  return objectProperties;
-};
-
-/**
 * Helper function for patching one prototype.
-* Patches the given type with the addition of a
-* call to listener, a function passed as a parameter.
-* If no listener function is provided, the default listener is used.
+* Saves the unaltered state of the prototype using collectUnalteredPrototypeProperties()
+* and then patches the given prototype with a call to the listener.
 */
 domInterceptor.patchOnePrototype = function(type, typeName) {
   domInterceptor.collectUnalteredPrototypeProperties(type, typeName);
@@ -125,6 +93,33 @@ domInterceptor.patchOnePrototype = function(type, typeName) {
 };
 
 /**
+* Helper method to collect all properties of a given prototype.
+* When patching is removed, all prototype properties
+* are set back to these original values
+**/
+domInterceptor.collectUnalteredPrototypeProperties = function(type, typeName) {
+  domInterceptor.listener = domInterceptor._listener;
+  if(!type || !type.prototype) {
+    throw new Error('collectUnalteredPrototypeProperties() needs a .prototype to collect properties' +
+      ' from. ' + type + '.prototype is undefined.');
+  }
+  else if(!typeName) {
+    throw new Error('typeName is required to save properties, got: ' + typeName);
+  }
+  var objectProperties = {};
+  var objectPropertyNames = Object.getOwnPropertyNames(type.prototype);
+  objectPropertyNames.forEach(function(prop) {
+    //Access of some prototype values may throw an error
+    try {
+      objectProperties[prop] = type.prototype[prop];
+    } catch(e) {}
+  });
+  domInterceptor.listener = domInterceptor.savedListener;
+  originalProperties[typeName] = objectProperties;
+  return objectProperties;
+};
+
+/**
 * Controls the unpatching process by unpatching the
 * prototypes as well as disabling the patching of individual
 * HTML elements and returning those patched elements to their
@@ -156,8 +151,7 @@ domInterceptor.unpatchOnePrototype = function(type, typeName) {
       if(typeof alteredElement === 'function') {
         type.prototype[prop] = originalProperties[typeName][prop];
       }
-    }
-    catch(e) {}
+    } catch(e) {}
   });
   domInterceptor.listener = domInterceptor.savedListener;
 };
