@@ -1,19 +1,10 @@
 describe('domInterceptor', function() {
-  var propsNotConfigurable;
   var prototypeNotAvailable;
   var noRemove;
   var listener;
   beforeEach(function(){
     listener = jasmine.createSpy('listener');
   })
-
-  try {
-    var div = document.createElement('div');
-    domInterceptor.patchElementProperties(div);
-  }
-  catch(e) {
-    propsNotConfigurable = true;
-  }
 
   try {
     var objectProperties = Object.getOwnPropertyNames(Element.prototype);
@@ -60,6 +51,7 @@ describe('domInterceptor', function() {
         domInterceptor.unpatchOnePrototype(Element, 'Element');
       });
   });
+
   describe('addManipulationListener()', function() {
     it('should patch the functions of Element.prototype', function() {
       spyOn(domInterceptor, 'patchOnePrototype');
@@ -86,14 +78,6 @@ describe('domInterceptor', function() {
       expect(domInterceptor.patchOnePrototype).toHaveBeenCalledWith(Document, 'Document');
       domInterceptor.removeManipulationListener();
     });
-
-
-    // it('should create a listener that conforms to the users default parameters', function() {
-    //   spyOn(domInterceptor, 'setListenerDefaults');
-    //   domInterceptor.addManipulationListener(true, true, true, true);
-    //   expect(domInterceptor.setListenerDefaults).toHaveBeenCalledWith(true, true, true, true);
-    //   domInterceptor.removeManipulationListener();
-    // });
 
 
     if(!noRemove) {
@@ -160,6 +144,7 @@ describe('domInterceptor', function() {
         }).toThrow('typeName must be the name used to save prototype properties. Got: undefined');
       });
   });
+
   describe('removeManipulationListener()', function() {
     it('should remove the patch from functions on Element.prototype', function() {
       spyOn(domInterceptor, 'unpatchOnePrototype');
@@ -184,28 +169,5 @@ describe('domInterceptor', function() {
       expect(domInterceptor.unpatchOnePrototype).toHaveBeenCalledWith(Document, 'Document');
     });
   });
-
-  // describe('listener properties', function() {
-  //   it('should use default hintLog behavior if no defaults are set', function() {
-  //     domInterceptor.setListenerDefaults();
-  //     expect(hintLog.debugBreak).toBe(false);
-  //     expect(hintLog.propOnly).toBe(false);
-  //     expect(hintLog.includeLine).toBe(true);
-  //   });
-
-
-  //   it('should throw an error if loudError default is set', function() {
-  //     domInterceptor.setListenerDefaults(true, false, false, true);
-  //     expect(function() {
-  //       listener('An error');
-  //     }).toThrow();
-  //   });
-
-
-  //   it('should pause the debugger if the debugBreak parameter is set', function() {
-  //     domInterceptor.setListenerDefaults(false, true, false, true);
-  //     expect(hintLog.debugBreak).toEqual(true);
-  //   });
-  // });
 });
 
