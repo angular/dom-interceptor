@@ -52,109 +52,6 @@ describe('domInterceptor', function() {
     });
   });
 
-  //Safari does not allow configuration of the properties that
-  //are patched in this patching of indivdual elements.
-  //Hence this patching is not tested.
-  //The current implementation of DOM-interceptor's listener
-  //does not use these patching functions. They are left as
-  //interesting methods for individual use.
-  // if(!propsNotConfigurable) {
-  //     describe('patchExistingElements()', function() {
-  //         it('should save versions of the original DOM elements', function() {
-  //           var elements = document.getElementsByTagName('*');
-  //           var length = elements.length;
-  //           domInterceptor.patchExistingElements();
-  //           expect(domInterceptor.savedElements[length - 1]).not.toBeUndefined();
-  //           domInterceptor.unpatchExistingElements();
-  //         });
-
-
-  //         it('should patch existing elements in the DOM', function() {
-  //             var testElement = document.createElement('div');
-  //             testElement.setAttribute('id', 'test');
-  //             document.body.appendChild(testElement);
-  //             domInterceptor.patchExistingElements(listener);
-  //             testElement.innerHTML = 'new innerHTML value';
-  //             //Counts once for getting innerHTML, once for setting
-  //             expect(listener.callCount).toBe(2);
-  //             domInterceptor.unpatchExistingElements();
-  //         });
-  //     });
-
-  //     describe('patchProperties()', function() {
-  //       it('should patch target properties of created HTML objects', function() {
-  //         var testProperty = 'innerHTML';
-  //         var element = document.createElement('a');
-  //         var copy = element;
-  //         domInterceptor.patchElementProperties(element);
-  //         expect(listener).not.toHaveBeenCalled();
-  //         element.innerHTML = 'new innerHTML value';
-  //         expect(listener.callCount).toBe(2);
-  //         domInterceptor.unpatchElementProperties(element, copy);
-  //       });
-
-
-  //       it('should not preserve the functionality of DOM APIS that are patched on individual elements', function() {
-  //         var element = document.createElement('a');
-  //         var copy = element;
-  //         expect(element.innerHTML).toBe('');
-  //         domInterceptor.patchElementProperties(element);
-  //         element.innerHTML = 'Testing Value';
-  //         expect(element.innerHTML).toBe('');
-  //         expect(listener).toHaveBeenCalled();
-  //         domInterceptor.unpatchElementProperties(element, copy);
-  //       });
-  //     });
-
-  //     describe('unpatchExistingElements()', function() {
-  //         it('should return existing elements to their before patch state', function() {
-  //                 var testElement = document.createElement('div');
-  //             testElement.innerHTML = 'testing html';
-  //             testElement.setAttribute('id', 'testNew');
-
-  //             var testElement2 = document.createElement('div');
-  //             testElement2.innerHTML = 'different html';
-  //             testElement2.setAttribute('id', 'test2');
-
-  //             document.body.appendChild(testElement);
-  //             document.body.appendChild(testElement2);
-
-  //             expect(testElement.innerHTML).toBe('testing html');
-  //             expect(document.getElementById('testNew').innerHTML).toBe('testing html');
-
-  //             domInterceptor.patchExistingElements();
-
-  //             expect(testElement.innerHTML).toBe('testing html');
-  //             expect(document.getElementById('testNew').innerHTML).toBe('testing html');
-  //             expect(listener).toHaveBeenCalled();
-
-  //             domInterceptor.unpatchExistingElements();
-
-  //             expect(document.getElementById('testNew').innerHTML).toBe('testing html');
-  //             expect(document.getElementById('test2').innerHTML).toBe('different html');
-  //         });
-  //     });
-
-  //     describe('unpatchElementProperties()', function() {
-  //       it('should unpatch target properties patched on HTML objects', function() {
-  //         var element = document.createElement('a');
-  //         expect(element.innerHTML).toBe('');
-  //         domInterceptor.patchElementProperties(element);
-  //         expect(element.innerHTML).toBe('');
-  //         expect(listener).toHaveBeenCalled();
-  //         var originalElementProperties = {
-  //             'innerHTML': '',
-  //             'parentElement': ''
-  //         }
-  //         domInterceptor.unpatchElementProperties(element, originalElementProperties);
-
-  //         listener.reset();
-  //         expect(element.innerHTML).toBe('');
-  //         expect(listener).not.toHaveBeenCalled();
-  //       });
-  //     });
-  // }
-
   describe('patchOnePrototype()', function() {
       it('should patch all properties of a given object .prototype', function() {
         var originalFunction = Element.prototype.getAttribute;
@@ -164,15 +61,6 @@ describe('domInterceptor', function() {
       });
   });
   describe('addManipulationListener()', function() {
-    // CURRENTLY, THE IMPLEMENTATION DOES NOT PATCH INDIVIDUAL ELEMENTS
-    // it('should patch existing DOM elements', function()     //   spyOn(domInterceptor, 'patchExistingElements');
-    //   expect(domInterceptor.patchExistingElements).not.toHaveBeenCalled();
-    //   domInterceptor.addManipulationListener(listener);
-    //   expect(domInterceptor.patchExistingElements).toHaveBeenCalled();
-    //   domInterceptor.removeManipulationListener();
-    // });
-
-
     it('should patch the functions of Element.prototype', function() {
       spyOn(domInterceptor, 'patchOnePrototype');
       expect(domInterceptor.patchOnePrototype).not.toHaveBeenCalled();
@@ -208,34 +96,6 @@ describe('domInterceptor', function() {
     // });
 
 
-    //WITHOUT PATCHING OF INDIVIDUAL ELEMENTS, THESE TESTS DO NOT PASS
-    // it('should detect getting element.innerHTML', function()     //   var testElement = document.createElement('div');
-    //   document.body.appendChild(testElement);
-    //   domInterceptor.addManipulationListener();
-    //   var inner = testElement.innerHTML;
-    //   //expect(listener.callCount).toBe(1);
-    //   expect(listener).toHaveBeenCalled();
-    //   domInterceptor.removeManipulationListener();
-    // });
-
-
-    // it('should detect setting element.innerHTML', function()     //   var element = document.createElement('div');
-    //   document.body.appendChild(element);
-    //   domInterceptor.addManipulationListener();
-    //   element.innerHTML = 'blank';
-    //   expect(listener).toHaveBeenCalled();
-    //   domInterceptor.removeManipulationListener();
-    // });
-
-
-    // it('should detect getting element.parentElement', function()     //   var element = document.createElement('div');
-    //   document.body.appendChild(element);
-    //   domInterceptor.addManipulationListener();
-    //   var parent = element.parentElement;
-    //   expect(listener).toHaveBeenCalled();
-    //   domInterceptor.removeManipulationListener();
-    // });
-
     if(!noRemove) {
       it('should detect calling element.remove', function() {
         domInterceptor.addManipulationListener(listener);
@@ -258,7 +118,8 @@ describe('domInterceptor', function() {
       });
 
 
-      it('should detect calling element.insertBefore', function() {        var parentElement = document.createElement('div');
+      it('should detect calling element.insertBefore', function() {
+        var parentElement = document.createElement('div');
         var referenceElement = document.createElement('div');
         parentElement.appendChild(referenceElement);
         domInterceptor.addManipulationListener(listener);
@@ -269,7 +130,8 @@ describe('domInterceptor', function() {
       });
 
 
-      it('should detect calling element.appendChild', function() {         var parentElement = document.createElement('div');
+      it('should detect calling element.appendChild', function() {
+        var parentElement = document.createElement('div');
         var childElement = document.createElement('div');
         domInterceptor.addManipulationListener(listener);
         parentElement.appendChild(childElement);
@@ -301,7 +163,6 @@ describe('domInterceptor', function() {
   describe('removeManipulationListener()', function() {
     it('should remove the patch from functions on Element.prototype', function() {
       spyOn(domInterceptor, 'unpatchOnePrototype');
-      spyOn(domInterceptor, 'unpatchExistingElements');
       expect(domInterceptor.unpatchOnePrototype).not.toHaveBeenCalled();
       domInterceptor.removeManipulationListener();
       expect(domInterceptor.unpatchOnePrototype).toHaveBeenCalledWith(Element, 'Element');
@@ -310,7 +171,6 @@ describe('domInterceptor', function() {
 
     it('should remove the patch from functions on Node.prototype', function() {
       spyOn(domInterceptor, 'unpatchOnePrototype');
-      spyOn(domInterceptor, 'unpatchExistingElements');
       expect(domInterceptor.unpatchOnePrototype).not.toHaveBeenCalled();
       domInterceptor.removeManipulationListener();
       expect(domInterceptor.unpatchOnePrototype).toHaveBeenCalledWith(Node, 'Node');
@@ -319,20 +179,10 @@ describe('domInterceptor', function() {
 
     it('should remove the patch from functions on Document.prototype', function() {
       spyOn(domInterceptor, 'unpatchOnePrototype');
-      spyOn(domInterceptor, 'unpatchExistingElements');
       expect(domInterceptor.unpatchOnePrototype).not.toHaveBeenCalled();
       domInterceptor.removeManipulationListener();
       expect(domInterceptor.unpatchOnePrototype).toHaveBeenCalledWith(Document, 'Document');
     });
-
-    //CURRENTLY, INDIVIDUAL ELMENTS ARE NOT BEING PATCHED. HENCE UNPATCHING IS NOT NEEDED
-    // it('should remove the patch from all DOM elements', function() {
-    //   spyOn(domInterceptor, 'unpatchOnePrototype');
-    //   spyOn(domInterceptor, 'unpatchExistingElements');
-    //   expect(domInterceptor.unpatchExistingElements).not.toHaveBeenCalled();
-    //   domInterceptor.removeManipulationListener();
-    //   expect(domInterceptor.unpatchExistingElements).toHaveBeenCalled();
-    // });
   });
 
   // describe('listener properties', function() {
