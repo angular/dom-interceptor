@@ -1,18 +1,15 @@
-(function (domInterceptor) {
-'use strict';
-
 /**
-* Initializes the domInterceptor listener to a function that is provided.
+* Initializes the  listener to a function that is provided.
 * The Element, Node, and Document prototypes are then patched to call
 * this listener when DOM APIs are accessed.
 **/
-domInterceptor.addManipulationListener = function(listener) {
-  domInterceptor.listener = domInterceptor._listener;
-  domInterceptor.savedListener = listener;
-  domInterceptor.patchOnePrototype(Element, 'Element');
-  domInterceptor.patchOnePrototype(Node, 'Node');
-  domInterceptor.patchOnePrototype(Document, 'Document');
-  domInterceptor.listener = domInterceptor.savedListener;
+function addManipulationListener(newListener) {
+  listener = _listener;
+  savedListener = newListener;
+  patchOnePrototype(Element, 'Element');
+  patchOnePrototype(Node, 'Node');
+  patchOnePrototype(Document, 'Document');
+  listener = savedListener;
 };
 
 /**
@@ -20,9 +17,9 @@ domInterceptor.addManipulationListener = function(listener) {
 * of its own access to the DOM. Within the interceptor
 * the listener should have no behavior.
 */
-domInterceptor._listener = domInterceptor.NOOP = function() {};
-domInterceptor.listener = domInterceptor.savedListener;
-domInterceptor.savedListener = function(message) {};
+var _listener = NOOP = function() {};
+var listener = savedListener;
+var savedListener = function(message) {};
 
 /**
 * Object to preserve all the original properties
@@ -35,9 +32,9 @@ var originalProperties = {};
 * Saves the unaltered state of the prototype using collectUnalteredPrototypeProperties()
 * and then patches the given prototype with a call to the listener.
 */
-domInterceptor.patchOnePrototype = function(type, typeName) {
-  domInterceptor.collectUnalteredPrototypeProperties(type, typeName);
-  domInterceptor.listener = domInterceptor._listener;
+function patchOnePrototype(type, typeName) {
+  collectUnalteredPrototypeProperties(type, typeName);
+  listener = _listener;
   if (!type || !type.prototype) {
     throw new Error('collectPrototypeProperties() needs a .prototype to collect properties from. '
       + type + '.prototype is undefined.');
@@ -56,7 +53,7 @@ domInterceptor.patchOnePrototype = function(type, typeName) {
           if (typeof desc.value === 'function') {
             var originalValue = desc.value;
             desc.value = function () {
-              domInterceptor.listener(prop);
+              listener(prop);
               return originalValue.apply(this, arguments);
             };
           }
@@ -64,14 +61,14 @@ domInterceptor.patchOnePrototype = function(type, typeName) {
             if (typeof desc.set === 'function') {
               var originalSet = desc.set;
               desc.set = function () {
-                domInterceptor.listener('set:' + prop);
+                listener('set:' + prop);
                 return originalSet.apply(this, arguments);
               };
             }
             if (typeof desc.get === 'function') {
               var originalGet = desc.get;
               desc.get = function () {
-                domInterceptor.listener('get:' + prop);
+                listener('get:' + prop);
                 return originalGet.apply(this, arguments);
               };
             }
@@ -81,7 +78,7 @@ domInterceptor.patchOnePrototype = function(type, typeName) {
           try {
             var original = type.prototype[prop];
             type.prototype[prop] = function () {
-              domInterceptor.listener(prop);
+              listener(prop);
               return original.apply(this, arguments);
             };
           }
@@ -89,7 +86,7 @@ domInterceptor.patchOnePrototype = function(type, typeName) {
         }
     }
   });
-  domInterceptor.listener = domInterceptor.savedListener;
+  listener = savedListener;
 };
 
 /**
@@ -97,8 +94,8 @@ domInterceptor.patchOnePrototype = function(type, typeName) {
 * When patching is removed, all prototype properties
 * are set back to these original values
 **/
-domInterceptor.collectUnalteredPrototypeProperties = function(type, typeName) {
-  domInterceptor.listener = domInterceptor._listener;
+function collectUnalteredPrototypeProperties(type, typeName) {
+  listener = _listener;
   if(!type || !type.prototype) {
     throw new Error('collectUnalteredPrototypeProperties() needs a .prototype to collect properties' +
       ' from. ' + type + '.prototype is undefined.');
@@ -114,7 +111,7 @@ domInterceptor.collectUnalteredPrototypeProperties = function(type, typeName) {
       objectProperties[prop] = type.prototype[prop];
     } catch(e) {}
   });
-  domInterceptor.listener = domInterceptor.savedListener;
+  listener = savedListener;
   originalProperties[typeName] = objectProperties;
   return objectProperties;
 };
@@ -125,12 +122,12 @@ domInterceptor.collectUnalteredPrototypeProperties = function(type, typeName) {
 * HTML elements and returning those patched elements to their
 * original state.
 **/
-domInterceptor.removeManipulationListener = function() {
-  domInterceptor.listener = domInterceptor._listener;
-  domInterceptor.unpatchOnePrototype(Element, 'Element');
-  domInterceptor.unpatchOnePrototype(Node, 'Node');
-  domInterceptor.unpatchOnePrototype(Document, 'Document');
-  domInterceptor.listener = domInterceptor.savedListener;
+function removeManipulationListener() {
+  listener = _listener;
+  unpatchOnePrototype(Element, 'Element');
+  unpatchOnePrototype(Node, 'Node');
+  unpatchOnePrototype(Document, 'Document');
+  listener = savedListener;
 };
 
 /**
@@ -138,8 +135,8 @@ domInterceptor.removeManipulationListener = function() {
 * Sets all properties of the given type back to the
 * original values that were collected.
 **/
-domInterceptor.unpatchOnePrototype = function(type, typeName) {
-  domInterceptor.listener = domInterceptor._listener;
+function unpatchOnePrototype(type, typeName) {
+  listener = _listener;
   if(!typeName) {
     throw new Error('typeName must be the name used to save prototype properties. Got: ' + typeName);
   }
@@ -153,8 +150,11 @@ domInterceptor.unpatchOnePrototype = function(type, typeName) {
       }
     } catch(e) {}
   });
-  domInterceptor.listener = domInterceptor.savedListener;
+  listener = savedListener;
 };
 
-}((typeof module !== 'undefined' && module && module.exports) ?
-      (module.exports = window.domInterceptor = {}) : (window.domInterceptor = {}) ));
+module.exports.addManipulationListener = addManipulationListener;
+module.exports.removeManipulationListener = removeManipulationListener;
+module.exports.patchOnePrototype = patchOnePrototype;
+module.exports.unpatchOnePrototype = unpatchOnePrototype;
+

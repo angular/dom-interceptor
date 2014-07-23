@@ -1,10 +1,11 @@
+var domInterceptor = require('./dom-interceptor');
 describe('domInterceptor', function() {
   var prototypeNotAvailable;
   var noRemove;
   var listener;
   beforeEach(function(){
     listener = jasmine.createSpy('listener');
-  })
+  });
 
   try {
     var objectProperties = Object.getOwnPropertyNames(Element.prototype);
@@ -21,61 +22,39 @@ describe('domInterceptor', function() {
     noRemove = true;
   }
 
-  describe('collectUnalteredPrototypeProperties()', function() {
-    it('should collect the unpatched properties of prototypes', function() {
-      var objectPropertyNames = Object.getOwnPropertyNames(Element.prototype);
-      var originalProperties = domInterceptor.collectUnalteredPrototypeProperties(Element, 'Element');
-      expect(originalProperties[objectPropertyNames[0]]).toBe(Element.prototype[objectPropertyNames[0]]);
-    });
-
-
-    it('should throw if typeName is not provided', function() {
-      expect(function() {
-          domInterceptor.collectUnalteredPrototypeProperties(Element);
-      }).toThrow('typeName is required to save properties, got: undefined');
-    });
-
-
-    it('should throw if type.prototype is undefined', function() {
-      expect(function() {
-          domInterceptor.collectUnalteredPrototypeProperties(document.body, 'Body');
-      }).toThrow('collectUnalteredPrototypeProperties() needs a .prototype to collect properties from. [object HTMLBodyElement].prototype is undefined.');
-    });
-  });
-
   describe('patchOnePrototype()', function() {
-      it('should patch all properties of a given object .prototype', function() {
-        var originalFunction = Element.prototype.getAttribute;
-        domInterceptor.patchOnePrototype(Element, 'Element');
-        expect(Element.prototype.getAttribute).not.toBe(originalFunction);
-        domInterceptor.unpatchOnePrototype(Element, 'Element');
-      });
+    it('should patch all properties of a given object .prototype', function() {
+      var originalFunction = Element.prototype.getAttribute;
+      domInterceptor.patchOnePrototype(Element, 'Element');
+      expect(Element.prototype.getAttribute).not.toBe(originalFunction);
+      domInterceptor.unpatchOnePrototype(Element, 'Element');
+    });
   });
 
   describe('addManipulationListener()', function() {
     it('should patch the functions of Element.prototype', function() {
-      spyOn(domInterceptor, 'patchOnePrototype');
-      expect(domInterceptor.patchOnePrototype).not.toHaveBeenCalled();
       domInterceptor.addManipulationListener(listener);
-      expect(domInterceptor.patchOnePrototype).toHaveBeenCalledWith(Element, 'Element');
+      var elem = document.createElement('div');
+      elem.getAttribute('align');
+      expect(listener).toHaveBeenCalledWith('getAttribute');
       domInterceptor.removeManipulationListener();
     });
 
 
     it('should patch the functions of Node.prototype', function() {
-      spyOn(domInterceptor, 'patchOnePrototype');
-      expect(domInterceptor.patchOnePrototype).not.toHaveBeenCalled();
+      var elem = document.createElement('div');
+      var elem2 = document.createElement('div');
       domInterceptor.addManipulationListener(listener);
-      expect(domInterceptor.patchOnePrototype).toHaveBeenCalledWith(Node, 'Node');
+      elem.appendChild(elem2);
+      expect(listener).toHaveBeenCalledWith('appendChild');
       domInterceptor.removeManipulationListener();
     });
 
 
     it('should patch the functions of Document.prototype', function() {
-      spyOn(domInterceptor, 'patchOnePrototype');
-      expect(domInterceptor.patchOnePrototype).not.toHaveBeenCalled();
       domInterceptor.addManipulationListener(listener);
-      expect(domInterceptor.patchOnePrototype).toHaveBeenCalledWith(Document, 'Document');
+      var fragment = document.createDocumentFragment('div');
+      expect(listener).toHaveBeenCalledWith('createDocumentFragment');
       domInterceptor.removeManipulationListener();
     });
 
@@ -89,6 +68,7 @@ describe('domInterceptor', function() {
         domInterceptor.removeManipulationListener();
       });
     }
+
 
     //Will only be patched if prototypes can be patched
     //Test not run if prototype cannot be patched
@@ -137,37 +117,38 @@ describe('domInterceptor', function() {
     });
 
 
-    it('should throw if not given the name parameter used to find the original values',
-      function() {
-        expect(function() {
-          domInterceptor.unpatchOnePrototype(Element);
-        }).toThrow('typeName must be the name used to save prototype properties. Got: undefined');
-      });
+    it('should throw if not given the name parameter used to find the original values', function() {
+      expect(function() {
+        domInterceptor.unpatchOnePrototype(Element);
+      }).toThrow('typeName must be the name used to save prototype properties. Got: undefined');
+    });
   });
 
   describe('removeManipulationListener()', function() {
     it('should remove the patch from functions on Element.prototype', function() {
-      spyOn(domInterceptor, 'unpatchOnePrototype');
-      expect(domInterceptor.unpatchOnePrototype).not.toHaveBeenCalled();
+      domInterceptor.addManipulationListener(listener)
       domInterceptor.removeManipulationListener();
-      expect(domInterceptor.unpatchOnePrototype).toHaveBeenCalledWith(Element, 'Element');
+      var elem = document.createElement('div');
+      elem.getAttribute('align');
+      expect(listener).not.toHaveBeenCalled();
     });
 
 
     it('should remove the patch from functions on Node.prototype', function() {
-      spyOn(domInterceptor, 'unpatchOnePrototype');
-      expect(domInterceptor.unpatchOnePrototype).not.toHaveBeenCalled();
+      var elem = document.createElement('div');
+      var elem2 = document.createElement('div');
+      domInterceptor.addManipulationListener(listener);
       domInterceptor.removeManipulationListener();
-      expect(domInterceptor.unpatchOnePrototype).toHaveBeenCalledWith(Node, 'Node');
+      elem.appendChild(elem2);
+      expect(listener).not.toHaveBeenCalledWith();
     });
 
 
     it('should remove the patch from functions on Document.prototype', function() {
-      spyOn(domInterceptor, 'unpatchOnePrototype');
-      expect(domInterceptor.unpatchOnePrototype).not.toHaveBeenCalled();
+      domInterceptor.addManipulationListener(listener);
       domInterceptor.removeManipulationListener();
-      expect(domInterceptor.unpatchOnePrototype).toHaveBeenCalledWith(Document, 'Document');
+      var fragment = document.createDocumentFragment('div');
+      expect(listener).not.toHaveBeenCalledWith();
     });
   });
 });
-
