@@ -4,7 +4,7 @@
   "description": "patch DOM APIs to intercept calls to them",
   "main": "dom-interceptor.js",
   "scripts": {
-     "test": "./node_modules/karma/bin/karma start --browsers Firefox --single-run"
+     "test": "karma start karma-sauce.conf.js"
   },
   "repository": {
     "type": "git",
