@@ -41,8 +41,8 @@ var originalProperties = {};
 domInterceptor.collectUnalteredPrototypeProperties = function(type, typeName) {
   domInterceptor.listener = domInterceptor._listener;
   if(!type || !type.prototype) {
-    throw new Error('collectUnalteredPrototypeProperties() needs a .prototype to collect properties from. ' +
-      type + '.prototype is undefined.');
+    throw new Error('collectUnalteredPrototypeProperties() needs a .prototype to collect properties' +
+      ' from. ' + type + '.prototype is undefined.');
   }
   else if(!typeName) {
     throw new Error('typeName is required to save properties, got: ' + typeName);
@@ -71,7 +71,8 @@ domInterceptor.patchOnePrototype = function(type, typeName) {
   domInterceptor.collectUnalteredPrototypeProperties(type, typeName);
   domInterceptor.listener = domInterceptor._listener;
   if (!type || !type.prototype) {
-    throw new Error('collectPrototypeProperties() needs a .prototype to collect properties from. ' + type + '.prototype is undefined.');
+    throw new Error('collectPrototypeProperties() needs a .prototype to collect properties from. '
+      + type + '.prototype is undefined.');
   }
   var objectProperties = Object.getOwnPropertyNames(type.prototype);
   objectProperties.forEach(function(prop) {
@@ -153,94 +154,13 @@ domInterceptor.unpatchOnePrototype = function(type, typeName) {
     try{
     var alteredElement = type.prototype[prop];
       if(typeof alteredElement === 'function') {
-        type.prototype[prop] = domInterceptor.originalProperties[typeName][prop];
+        type.prototype[prop] = originalProperties[typeName][prop];
       }
     }
     catch(e) {}
   });
   domInterceptor.listener = domInterceptor.savedListener;
 };
-
-// /**
-// * Methods to patch DOM Access based on the harmony-reflect library and
-// * the use of proxies. Currently proxies are considered experimental javascript.
-// * In chrome, proxies can be enabled with the enable-javascript-harmony flag.
-// * When support of proxies is more common, these functions could be used to patch
-// * DOM elements on retrieval so that only the proxies are patched.
-// */
-// domInterceptor.accessFunctions = ['getElementsByClassName', 'getElementsByName',
-// 'getElementsByTagName', 'getElementsByTagNameNS'];
-// domInterceptor.unpatchedFunctions = {};
-// domInterceptor.patchAccess = function() {
-//   var originalIndividual = Document.prototype['getElementById'];
-//   domInterceptor.unpatchedFunctions['getElementById'] = originalIndividual;
-//   Document.prototype['getElementById'] = function() {
-//     return domInterceptor.getProxy(originalIndividual.apply(this, arguments));
-//   }
-//   domInterceptor.accessFunctions.forEach(function(accessFunction) {
-//     var originalFunction = Document.prototype[accessFunction];
-//     domInterceptor.unpatchedFunctions[accessFunction] = originalFunction;
-//     Document.prototype[accessFunction] = function() {
-//       return domInterceptor.getProxyList(originalFunction.apply(this, arguments));
-//     }
-//   });
-// };
-
-// /**
-// * Attempts to create a proxy element in place of a created element when the method
-// * is called. Currently causes the proxy to be null.
-// */
-// domInterceptor.patchCreation = function() {
-//   var originalCreate = Document.prototype['createElement'];
-//   domInterceptor.unpatchedFunctions['createElement'] = Document.prototype['createElement'];
-//   Document.prototype['createElement'] = function() {
-//     return domInterceptor.getProxy(originalCreate.apply(this, arguments));
-//   }
-// }
-
-// /**
-// * Helper method to get a list of proxies for methods that access
-// * lists of DOM elements such as getElementsByTagName()
-// */
-// domInterceptor.getProxyList = function(elementList) {
-//   var elems = {};
-//   for(var i = 0; i < Object.keys(elementList).length - 1; i++) {
-//     if(elementList[i]) {
-//       elems[i] = domInterceptor.getProxy(elementList[i]);
-//     }
-//   }
-//   return elems;
-// };
-
-// /**
-// * Creates a proxy element that is accessed instead of a given DOM element.
-// * This proxy is patched to call the desired listener function.
-// * Hence, the proxy has the functionality necessary to detect DOM manipulation,
-// * but the original element is still fully functional.
-// */
-// domInterceptor.getProxy = function(element) {
-//   var proxyElement = new Proxy(element, {
-//     get: function(target, name, receiver) {
-//       domInterceptor.savedListener(name);
-//       return Reflect.get(target, name, receiver);
-//     },
-//     set: function(target, name, value, receiver) {
-//       domInterceptor.savedListener(name);
-//       return Reflect.set(target, name, value, receiver);
-//     }
-//   });
-//   return proxyElement;
-// };
-
-// /**
-// * Removes proxies of elements.
-// */
-// domInterceptor.unPatchAccess = function() {
-//   Document.prototype['getElementById'] = domInterceptor.unpatchedFunctions['getElementById'];
-//   domInterceptor.accessFunctions.forEach(function(accessFunction) {
-//     Document.prototype[accessFunction] = domInterceptor.unpatchedFunctions[accessFunction];
-//   });
-// };
 
 }((typeof module !== 'undefined' && module && module.exports) ?
       (module.exports = window.domInterceptor = {}) : (window.domInterceptor = {}) ));
