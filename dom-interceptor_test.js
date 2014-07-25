@@ -105,6 +105,25 @@ describe('domInterceptor', function() {
     }
   });
 
+  describe('enableLineNumber', function(){
+    it('should add a line number to listener message if default is set', function() {
+      domInterceptor.enableLineNumbers(3);
+      domInterceptor.addManipulationListener(listener);
+      var element = document.createElement('div');
+      var parent = element.addEventListener('click', function(e){});
+      expect(listener).toHaveBeenCalled();
+      domInterceptor.removeManipulationListener();
+    });
+
+
+    it('should throw if the parameter is not a valid number', function() {
+      expect(function() {
+        domInterceptor.enableLineNumbers('randomString');
+      }).toThrow('Enabling line numbers requires an integer parameter of the stack trace line that '
+      + 'should be given. Got: randomString');
+    });
+  });
+
   describe('unpatchOnePrototype()', function() {
     it('should unpatch the .prototype properties of the given parameter', function() {
       var objectProperties = Object.getOwnPropertyNames(Element.prototype);
