@@ -1,3 +1,4 @@
+'use strict'
 /**
 * Initializes the  listener to a function that is provided.
 * The Element, Node, and Document prototypes are then patched to call
@@ -17,7 +18,8 @@ function addManipulationListener(newListener) {
 * of its own access to the DOM. Within the interceptor
 * the listener should have no behavior.
 */
-var _listener = NOOP = function() {};
+var explanation = 'Detected Manipulation of DOM API: ';
+var _listener = function() {};
 var listener = savedListener;
 var savedListener = function(message) {};
 
