@@ -53,32 +53,17 @@ function patchOnePrototype(type, typeName) {
           if (typeof desc.value === 'function') {
             var originalValue = desc.value;
             desc.value = function () {
-              listener(prop);
+              listener(explanation + prop);
               return originalValue.apply(this, arguments);
             };
           }
-        } else {
-            if (typeof desc.set === 'function') {
-              var originalSet = desc.set;
-              desc.set = function () {
-                listener('set:' + prop);
-                return originalSet.apply(this, arguments);
-              };
-            }
-            if (typeof desc.get === 'function') {
-              var originalGet = desc.get;
-              desc.get = function () {
-                listener('get:' + prop);
-                return originalGet.apply(this, arguments);
-              };
-            }
-          }
+        }
         Object.defineProperty(type.prototype, prop, desc);
       } else if (desc.writable) {
           try {
             var original = type.prototype[prop];
             type.prototype[prop] = function () {
-              listener(prop);
+              listener(explanation + prop);
               return original.apply(this, arguments);
             };
           }

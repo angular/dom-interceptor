@@ -36,7 +36,7 @@ describe('domInterceptor', function() {
       domInterceptor.addManipulationListener(listener);
       var elem = document.createElement('div');
       elem.getAttribute('align');
-      expect(listener).toHaveBeenCalledWith('getAttribute');
+      expect(listener).toHaveBeenCalledWith('Detected Manipulation of DOM API: getAttribute');
       domInterceptor.removeManipulationListener();
     });
 
@@ -46,7 +46,7 @@ describe('domInterceptor', function() {
       var elem2 = document.createElement('div');
       domInterceptor.addManipulationListener(listener);
       elem.appendChild(elem2);
-      expect(listener).toHaveBeenCalledWith('appendChild');
+      expect(listener).toHaveBeenCalledWith('Detected Manipulation of DOM API: appendChild');
       domInterceptor.removeManipulationListener();
     });
 
@@ -54,7 +54,7 @@ describe('domInterceptor', function() {
     it('should patch the functions of Document.prototype', function() {
       domInterceptor.addManipulationListener(listener);
       var fragment = document.createDocumentFragment('div');
-      expect(listener).toHaveBeenCalledWith('createDocumentFragment');
+      expect(listener).toHaveBeenCalledWith('Detected Manipulation of DOM API: createDocumentFragment');
       domInterceptor.removeManipulationListener();
     });
 
@@ -149,6 +149,16 @@ describe('domInterceptor', function() {
       domInterceptor.removeManipulationListener();
       var fragment = document.createDocumentFragment('div');
       expect(listener).not.toHaveBeenCalledWith();
+    });
+  });
+
+  describe('browser consistency', function() {
+    it('should not patch properties that are only patchable in some browsers', function() {
+      var e = document.createElement('div');
+      domInterceptor.addManipulationListener(listener);
+      e.innerHTML += 'blank';
+      domInterceptor.removeManipulationListener();
+      expect(listener).not.toHaveBeenCalled();
     });
   });
 });
