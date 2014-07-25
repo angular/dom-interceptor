@@ -1,10 +1,10 @@
 {
   "name": "dom-interceptor",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "patch DOM APIs to intercept calls to them",
   "main": "dom-interceptor.js",
   "scripts": {
-     "test": "karma start karma-sauce.conf.js"
+    "test": "karma start karma-sauce.conf.js"
   },
   "repository": {
     "type": "git",
@@ -29,8 +29,7 @@
     "karma-jasmine": "0.1.5",
     "karma-chrome-launcher": "^0.1.4",
     "karma-coverage": "~0.1.4",
-    "karma-firefox-launcher": "~0.1.3",
-    "karma-jasmine": "0.1.5"
+    "karma-firefox-launcher": "~0.1.3"
   },
   "dependencies": {
     "angular-hint-log": "git://github.com/angular/angular-hint-log",
@@ -42,4 +41,3 @@
     "watchify": "^0.10.2"
   }
 }
-
