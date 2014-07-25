@@ -50,7 +50,7 @@ function enableLineNumbers(stackTraceLocation) {
 function findLineNumber() {
   var e = new Error();
   //Find the line in the user's program rather than in this service
-  var lineNum = e.stack.split('\n')[stackTraceLine];
+  var lineNum = e.stack ? e.stack.split('\n')[stackTraceLine] : '(line number unavailable in Safari)';
   lineNum = lineNum.split('<anonymous> ')[1] || lineNum;
   return lineNum;
 };
