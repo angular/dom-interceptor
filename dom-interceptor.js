@@ -49,8 +49,18 @@ function enableLineNumbers(stackTraceLocation) {
 */
 function findLineNumber() {
   var e = new Error();
+  var lineNum;
   //Find the line in the user's program rather than in this service
-  var lineNum = e.stack ? e.stack.split('\n')[stackTraceLine] : '(line number unavailable in Safari)';
+  if(e.stack) {
+    lineNum = e.stack.split('\n')[stackTraceLine];
+  } else {
+      //In Safari, an error does not have a line number until it is thrown
+      try {
+        throw e;
+      } catch (e) {
+          lineNum = e.stack.split('\n')[stackTraceLine];
+      }
+  }
   lineNum = lineNum.split('<anonymous> ')[1] || lineNum;
   return lineNum;
 };
