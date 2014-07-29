@@ -16,7 +16,7 @@ function addManipulationListener(newListener) {
 /**
 * The interceptor should give a helpful message when manipulation is detected.
 */
-var explanation = 'Detected Manipulation of DOM API: ';
+var explanation = '##DOM## Detected Manipulation of DOM API: ';
 
 /**
 * The DOM-interceptor should not throw errors because

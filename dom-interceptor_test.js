@@ -36,7 +36,7 @@ describe('domInterceptor', function() {
       domInterceptor.addManipulationListener(listener);
       var elem = document.createElement('div');
       elem.getAttribute('align');
-      expect(listener).toHaveBeenCalledWith('Detected Manipulation of DOM API: getAttribute');
+      expect(listener).toHaveBeenCalledWith('##DOM## Detected Manipulation of DOM API: getAttribute');
       domInterceptor.removeManipulationListener();
     });
 
@@ -46,7 +46,7 @@ describe('domInterceptor', function() {
       var elem2 = document.createElement('div');
       domInterceptor.addManipulationListener(listener);
       elem.appendChild(elem2);
-      expect(listener).toHaveBeenCalledWith('Detected Manipulation of DOM API: appendChild');
+      expect(listener).toHaveBeenCalledWith('##DOM## Detected Manipulation of DOM API: appendChild');
       domInterceptor.removeManipulationListener();
     });
 
@@ -54,7 +54,7 @@ describe('domInterceptor', function() {
     it('should patch the functions of Document.prototype', function() {
       domInterceptor.addManipulationListener(listener);
       var fragment = document.createDocumentFragment('div');
-      expect(listener).toHaveBeenCalledWith('Detected Manipulation of DOM API: createDocumentFragment');
+      expect(listener).toHaveBeenCalledWith('##DOM## Detected Manipulation of DOM API: createDocumentFragment');
       domInterceptor.removeManipulationListener();
     });
 
