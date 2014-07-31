@@ -1,4 +1,4 @@
-# dom interceptor [![Build Status](https://travis-ci.org/angular/dom-interceptor.svg?branch=master)](https://travis-ci.org/angular/dom-interceptor)
+# dom interceptor [![Build Status](https://travis-ci.org/angular/dom-interceptor.svg?branch=master)](https://travis-ci.org/angular/dom-interceptor) [![Code Climate](https://codeclimate.com/github/angular/dom-interceptor/badges/gpa.svg)](https://codeclimate.com/github/angular/dom-interceptor)
 
 # Background
 

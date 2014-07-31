@@ -1,4 +1,14 @@
-'use strict'
+'use strict';
+
+/**
+* The DOM-interceptor should not throw errors because
+* of its own access to the DOM. Within the interceptor
+* the listener should have no behavior.
+*/
+var _listener = function() {};
+var listener = savedListener;
+var savedListener = function(message) {};
+
 /**
 * Initializes the  listener to a function that is provided.
 * The Element, Node, and Document prototypes are then patched to call
@@ -11,21 +21,13 @@ function addManipulationListener(newListener) {
   patchOnePrototype(Node, 'Node');
   patchOnePrototype(Document, 'Document');
   listener = savedListener;
-};
+}
 
 /**
 * The interceptor should give a helpful message when manipulation is detected.
 */
 var explanation = '##DOM## Detected Manipulation of DOM API: ';
 
-/**
-* The DOM-interceptor should not throw errors because
-* of its own access to the DOM. Within the interceptor
-* the listener should have no behavior.
-*/
-var _listener = function() {};
-var listener = savedListener;
-var savedListener = function(message) {};
 
 /**
 * The listener should include the line where the users program gives an error
@@ -34,13 +36,13 @@ var savedListener = function(message) {};
 * using an arbitrary line of the stacktrace such as line might return the line within
 * the interceptor where the listener was called.
 */
-var stackTraceLine = undefined;
+var stackTraceLine;
 function enableLineNumbers(stackTraceLocation) {
   if(typeof stackTraceLocation === 'number' && !isNaN(stackTraceLocation)) {
     stackTraceLine = stackTraceLocation;
   } else {
-    throw new Error('Enabling line numbers requires an integer parameter of the stack trace line '
-      + 'that should be given. Got: ' + stackTraceLocation);
+    throw new Error('Enabling line numbers requires an integer parameter of the stack trace line ' +
+      'that should be given. Got: ' + stackTraceLocation);
   }
 }
 
@@ -63,7 +65,7 @@ function findLineNumber() {
   }
   lineNum = lineNum.split('<anonymous> ')[1] || lineNum;
   return lineNum;
-};
+}
 
 /**
 * Object to preserve all the original properties
@@ -80,13 +82,13 @@ function patchOnePrototype(type, typeName) {
   collectUnalteredPrototypeProperties(type, typeName);
   listener = _listener;
   if (!type || !type.prototype) {
-    throw new Error('collectPrototypeProperties() needs a .prototype to collect properties from. '
-      + type + '.prototype is undefined.');
+    throw new Error('collectPrototypeProperties() needs a .prototype to collect properties from. ' +
+      type + '.prototype is undefined.');
   }
   var objectProperties = Object.getOwnPropertyNames(type.prototype);
   objectProperties.forEach(function(prop) {
     //Access of some prototype values may throw an error
-    var desc = undefined;
+    var desc;
     try {
       desc = Object.getOwnPropertyDescriptor(type.prototype, prop);
     }
@@ -116,7 +118,7 @@ function patchOnePrototype(type, typeName) {
     }
   });
   listener = savedListener;
-};
+}
 
 /**
 * Helper method to collect all properties of a given prototype.
@@ -142,7 +144,7 @@ function collectUnalteredPrototypeProperties(type, typeName) {
   listener = savedListener;
   originalProperties[typeName] = objectProperties;
   return objectProperties;
-};
+}
 
 /**
 * Controls the unpatching process by unpatching the
@@ -156,7 +158,7 @@ function removeManipulationListener() {
   unpatchOnePrototype(Node, 'Node');
   unpatchOnePrototype(Document, 'Document');
   listener = savedListener;
-};
+}
 
 /**
 * Helper function to unpatch one prototype.
@@ -179,7 +181,7 @@ function unpatchOnePrototype(type, typeName) {
     } catch(e) {}
   });
   listener = savedListener;
-};
+}
 
 module.exports.addManipulationListener = addManipulationListener;
 module.exports.removeManipulationListener = removeManipulationListener;
